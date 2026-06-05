@@ -105,12 +105,19 @@ async function loadProducts() {
     const asin = extractASIN(url) || "P" + (i);
     const rawTitle = (titleIdx >= 0 ? r[titleIdx] : "") || titleFromUrl(url);
     const title = rawTitle.trim();
-    const category = catIdx >= 0 && r[catIdx] ? r[catIdx].trim() : detectCategory(title).name;
-    const catSlug = slugify(category);
+    // Support multiple categories: comma / | / ; separated
+    const rawCat = catIdx >= 0 && r[catIdx] ? r[catIdx].trim() : "";
+    let categories = rawCat
+      ? rawCat.split(/[,|;\/]/).map(s => s.trim()).filter(Boolean)
+      : [detectCategory(title).name];
+    if (!categories.length) categories = [detectCategory(title).name];
+    const catSlugs = categories.map(slugify);
+    const category = categories[0];
+    const catSlug = catSlugs[0];
     const description = (descIdx >= 0 ? r[descIdx] : "") || `A hand-picked ${category.toLowerCase()} from our curated edit — discovered for its craft, finish and everyday wearability.`;
     const image = (imgIdx >= 0 ? r[imgIdx] : "") || placeholderImage(asin);
     products.push({
-      asin, title, category, catSlug,
+      asin, title, category, catSlug, categories, catSlugs,
       description: description.trim(),
       image: image.trim(),
       url, slug: slugify(title).slice(0, 60) + "-" + asin.toLowerCase(),
@@ -124,10 +131,11 @@ function qs(name) { return new URLSearchParams(location.search).get(name); }
 
 function cardHTML(p) {
   const isImg = /^https?:|^data:/.test(p.image);
+  const catLabel = (p.categories || [p.category]).join(" · ");
   return `<a class="card" href="post.html?p=${encodeURIComponent(p.slug)}">
     <div class="img">${isImg ? `<img src="${p.image}" alt="${escapeHtml(p.title)}" loading="lazy">` : `<span>${escapeHtml(p.category)}</span>`}</div>
     <div class="body">
-      <span class="cat">${escapeHtml(p.category)}</span>
+      <span class="cat">${escapeHtml(catLabel)}</span>
       <h3>${escapeHtml(p.title)}</h3>
       <p class="desc">${escapeHtml(p.description.slice(0, 110))}${p.description.length > 110 ? "…" : ""}</p>
       <div class="row"><span class="more">Read & Shop →</span></div>
@@ -154,13 +162,15 @@ async function renderShop() {
   if (!el) return;
   try {
     const products = await loadProducts();
-    const cats = Array.from(new Set(products.map(p => p.category)));
+    const cats = [];
+    const seen = new Set();
+    products.forEach(p => p.categories.forEach(c => { if (!seen.has(c)) { seen.add(c); cats.push(c); } }));
     const active = qs("c");
     if (chipsEl) {
       chipsEl.innerHTML = [`<a class="chip ${!active ? "active" : ""}" href="shop.html">All</a>`]
         .concat(cats.map(c => `<a class="chip ${active === slugify(c) ? "active" : ""}" href="shop.html?c=${slugify(c)}">${escapeHtml(c)}</a>`)).join("");
     }
-    const list = active ? products.filter(p => slugify(p.category) === active) : products;
+    const list = active ? products.filter(p => p.catSlugs.includes(active)) : products;
     el.innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty">Nothing here yet.</div>`;
   } catch (e) { el.innerHTML = `<div class="empty">Unable to load.</div>`; }
 }
