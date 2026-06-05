@@ -73,10 +73,22 @@ function hashCode(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h << 5
 
 // ---- Data layer ----
 let _cache = null;
+async function fetchCSV(url) {
+  // Try direct first (works on real hosts)
+  try {
+    const r = await fetch(url);
+    if (r.ok) return await r.text();
+    throw new Error("status " + r.status);
+  } catch (e) {
+    // Fallback for file:// / null-origin / blocked CORS — use a public proxy
+    const proxied = "https://corsproxy.io/?" + encodeURIComponent(url);
+    const r2 = await fetch(proxied);
+    return await r2.text();
+  }
+}
 async function loadProducts() {
   if (_cache) return _cache;
-  const res = await fetch(SHEET_CSV_URL);
-  const text = await res.text();
+  const text = await fetchCSV(SHEET_CSV_URL);
   const rows = parseCSV(text);
   if (!rows.length) return (_cache = []);
   const header = rows[0].map(h => h.trim().toLowerCase());
