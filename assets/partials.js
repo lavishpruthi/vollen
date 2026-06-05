@@ -5,15 +5,18 @@
       <span class="mark">The Jewellery Edit</span>
       <span class="tag">Hand-picked · Amazon Curated</span>
     </a>
-    <nav class="nav-links">
+    <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav-links" id="navLinks">
       <a href="index.html" data-nav="home">Home</a>
       <a href="shop.html" data-nav="shop">Shop</a>
       <a href="shop.html?c=rings" data-nav="rings">Rings</a>
       <a href="shop.html?c=earrings" data-nav="earrings">Earrings</a>
       <a href="shop.html?c=necklaces" data-nav="necklaces">Necklaces</a>
       <a href="about.html" data-nav="about">About</a>
+      <a class="btn btn-gold nav-cta" data-storefront target="_blank" rel="sponsored nofollow noopener">Storefront ↗</a>
     </nav>
-    <a class="btn btn-gold" data-storefront target="_blank" rel="sponsored nofollow noopener">Storefront ↗</a>
   </div></header>`;
 
   const FOOTER = `<footer class="site-footer"><div class="container">
@@ -48,5 +51,21 @@
     const f = document.getElementById("site-footer"); if (f) f.outerHTML = FOOTER;
     const active = document.body.dataset.nav;
     if (active) document.querySelectorAll(`[data-nav="${active}"]`).forEach(a => a.classList.add("active"));
+
+    const toggle = document.getElementById("navToggle");
+    const links = document.getElementById("navLinks");
+    if (toggle && links) {
+      toggle.addEventListener("click", () => {
+        const open = links.classList.toggle("open");
+        toggle.classList.toggle("active", open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      // Close menu when a link is clicked
+      links.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
+        links.classList.remove("open");
+        toggle.classList.remove("active");
+        toggle.setAttribute("aria-expanded", "false");
+      }));
+    }
   });
 })();
