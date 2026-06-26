@@ -1,0 +1,38 @@
+{
+  "product": {
+    "name": "Cervonix Engineered Multipurpose Foldable Ergonomic",
+    "asin": "B0GV7LMCGL",
+    "url": "/Cervonix-Engineered-Multipurpose-Foldable-Ergonomic/dp/B0GG167NV8/ref=cm_cr_srp_d_product_top?ie=UTF8",
+    "imageUrl": "https://m.media-amazon.com/images/I/51GoOABy63L._SS120_.jpg",
+    "seller": {
+      "name": "CERVONIX",
+    "url": "/Cervonix-Engineered-Multipurpose-Foldable-Ergonomic/dp/B0GG167NV8/ref=cm_cr_srp_d_product_top?ie=UTF8"
+    }
+  },
+  "ratings": {
+    "average": 4.8,
+    "totalRatings": 7,
+    "histogram": [
+      { "star": 5, "percent": 55 },
+      { "star": 4, "percent": 35 },
+      { "star": 3, "percent": 10 },
+      { "star": 2, "percent": 0 },
+      { "star": 1, "percent": 0 }
+    ]
+  },
+  "review": {
+    "id": "R1H40AI9TSN5DR",
+    "title": "Compact Versatile Laptop Bed Table",
+    "content": "This small table is very useful and easy to handle. It is lightweight, so you can carry it anywhere it is also strong and stable. The wide top gives enough space for a laptop studying or even eating food. It is a good choice to use at home or on the bed or while sitting on the sofa.",
+    "rating": 5,
+    "date": "13 May 2026",
+    "colour": "Black",
+    "verifiedPurchase": true,
+    "helpfulCount": 3,
+    "reviewer": {
+      "name": "LAVISH",
+      "profileUrl": "https://www.amazon.in/gp/profile/amzn1.account.AGZULYZB2YXIEPTLQZHPRRNXVMFA",
+      "imageUrl": "https://m.media-amazon.com/images/S/amazon-avatars-global/ac8fe3a8-83dc-44c4-9295-1122a3fa6429._CR0%2C0%2C500%2C500_SX460_SX48_.jpg"
+    }
+  }
+}
