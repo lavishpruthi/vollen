@@ -284,6 +284,15 @@
   }
   .btn-print:hover { background: #2a1c0e; }
 
+  .action-hint {
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--soft);
+    text-align: center;
+    margin-top: 10px;
+  }
+  .action-hint strong { color: var(--tan); }
+
   /* ─── INVOICE PREVIEW ─── */
   .preview-area {
     background: #e8ddd0;
@@ -710,10 +719,10 @@
     </div>
 
     <!-- ACTIONS -->
-    <div class="action-row">
-      <button class="btn-action btn-pdf" id="pdf-btn" onclick="savePDF()">⬇ Save PDF</button>
-      <button class="btn-action btn-print" onclick="window.print()">⎙ Print</button>
+    <div class="action-row" style="grid-template-columns:1fr;">
+      <button class="btn-action btn-pdf" id="pdf-btn" onclick="savePDF()">⬇ Download PDF</button>
     </div>
+    <div class="action-hint">Opens your browser's print dialog — set destination to <strong>Save as PDF</strong> to download.</div>
   </aside>
 
   <!-- ══ PREVIEW ══ -->
@@ -798,8 +807,6 @@
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // ── INIT ──────────────────────────────────────────────────────────────────
 let items = [];
@@ -997,72 +1004,14 @@ function recalc() {
   document.getElementById('inv-total').textContent = fmt(total);
 }
 
-// ── PDF ───────────────────────────────────────────────────────────────────
-// Renders the invoice to a high-res canvas, then scales the whole thing
-// down (if needed) so it always fits on a single A4 page — no cropping,
-// no spillover to a second page.
-async function savePDF() {
-  const btn = document.getElementById('pdf-btn');
-  const originalLabel = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = 'Generating…';
-
-  try {
-    const element = document.getElementById('invoice');
-
-    // Temporarily neutralize the clipping/shadow so nothing gets cropped
-    const prevBoxShadow = element.style.boxShadow;
-    const prevOverflow = element.style.overflow;
-    element.style.boxShadow = 'none';
-    element.style.overflow = 'visible';
-
-    const canvas = await html2canvas(element, {
-      scale: 2.5,
-      useCORS: true,
-      backgroundColor: '#fffaf4',
-      logging: false,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
-    });
-
-    element.style.boxShadow = prevBoxShadow;
-    element.style.overflow = prevOverflow;
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    // Fit the full canvas inside one page, preserving aspect ratio
-    const canvasRatio = canvas.width / canvas.height;
-    const pageRatio = pageWidth / pageHeight;
-
-    let renderWidth, renderHeight;
-    if (canvasRatio > pageRatio) {
-      renderWidth = pageWidth;
-      renderHeight = pageWidth / canvasRatio;
-    } else {
-      renderHeight = pageHeight;
-      renderWidth = pageHeight * canvasRatio;
-    }
-
-    const offsetX = (pageWidth - renderWidth) / 2;
-    const offsetY = (pageHeight - renderHeight) / 2;
-
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-    pdf.addImage(imgData, 'JPEG', offsetX, offsetY, renderWidth, renderHeight);
-
-    const brand = document.getElementById('brand-name').value || 'Invoice';
-    const num = document.getElementById('inv-num').value || 'INV';
-    pdf.save(`${brand}_${num}.pdf`);
-  } catch (err) {
-    console.error('PDF generation failed:', err);
-    alert('Something went wrong generating the PDF. Please try again.');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalLabel;
-  }
+// ── PDF / PRINT ──────────────────────────────────────────────────────────
+// Uses the browser's native print-to-PDF engine instead of a third-party
+// library. This renders the real HTML/CSS as an actual document (honoring
+// the A4 @page rule already defined above), so the output has genuine
+// selectable text and is never a screenshot. In the print dialog, choose
+// "Save as PDF" as the destination/printer to download it as a file.
+function savePDF() {
+  window.print();
 }
 </script>
 </body>
