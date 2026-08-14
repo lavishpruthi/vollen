@@ -316,10 +316,11 @@
     border-bottom: 1px solid var(--border);
     font-family: var(--mono);
     font-size: 0.88rem;
+    gap: 10px;
   }
   .details-row:last-of-type { border-bottom: none; }
-  .details-row .k { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .details-row .v { color: var(--text-bright); font-weight: 650; }
+  .details-row .k { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+  .details-row .v { color: var(--text-bright); font-weight: 650; text-align: right; word-break: break-all; }
   .num-row .v { color: var(--ok); font-size: 1.05rem; }
 
   .badge {
@@ -343,8 +344,99 @@
   .badge-idle { background: #1b222b; color: var(--text-dim); }
   .badge-ok { background: var(--ok-dim); color: var(--ok); }
   .badge-err { background: var(--danger-dim); color: var(--danger); }
+  .badge-sm { font-size: 0.6rem; padding: 2px 7px; }
 
   .timer { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); }
+
+  /* OTP result block */
+  .otp-hero {
+    display: none;
+    background: linear-gradient(135deg, rgba(53,212,136,0.1), rgba(53,212,136,0.03));
+    border: 1px solid rgba(53,212,136,0.35);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 0.85rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .otp-hero.show { display: flex; }
+  .otp-hero-left .k {
+    font-size: 0.68rem;
+    color: #7fe9b9;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .otp-hero-left .code {
+    font-family: var(--mono);
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: 0.06em;
+  }
+
+  .sms-box {
+    margin-top: 0.7rem;
+  }
+  .sms-box .k {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    margin-bottom: 5px;
+    display: block;
+  }
+  .sms-text {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--text);
+    background: #0a0f16;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 11px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .sms-text mark {
+    background: rgba(53,212,136,0.22);
+    color: #a8f5cb;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 700;
+  }
+
+  .candidates {
+    margin-top: 0.6rem;
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .candidates.show { display: flex; }
+  .candidates .hint {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    width: 100%;
+    margin-bottom: 2px;
+  }
+  .chip {
+    background: #1b222b;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--text-bright); }
+  .chip.selected { background: var(--ok-dim); border-color: rgba(53,212,136,0.4); color: var(--ok); }
 
   @media (prefers-reduced-motion: reduce) {
     .spinner, .badge-polling::before { animation: none; }
@@ -429,8 +521,8 @@
   <div class="panel">
     <div class="card-section-header">
       <span class="card-title">Extracted Details</span>
-      <button id="copyNumBtn" class="btn-copy" onclick="copyNumber()" disabled>
-        <span id="copyIcon">⧉</span> <span id="copyLabel">Copy</span>
+      <button id="copyNumBtn" class="btn-copy" onclick="copyValue(activeNumber, 'copyNumIcon', 'copyNumLabel')" disabled>
+        <span id="copyNumIcon">⧉</span> <span id="copyNumLabel">Copy</span>
       </button>
     </div>
     <div class="details-row">
@@ -443,15 +535,7 @@
     </div>
   </div>
 
-  <!-- API 1 -->
-  <div class="panel">
-    <div class="card-section-header">
-      <span class="card-title">API 1 · getNumber</span>
-    </div>
-    <div id="api1Box" class="log-box dim">Waiting to start…</div>
-  </div>
-
-  <!-- API 2 -->
+  <!-- API 2 / OTP -->
   <div class="panel">
     <div class="card-section-header">
       <span class="card-title">API 2 · getStatus</span>
@@ -459,6 +543,37 @@
     </div>
     <div id="api2Box" class="log-box dim">Waiting for a transaction ID…</div>
     <div id="pollTimer" class="timer" style="margin-top:6px; display:none;"></div>
+
+    <!-- Detected OTP -->
+    <div id="otpHero" class="otp-hero">
+      <div class="otp-hero-left">
+        <span class="k">Detected OTP <span id="otpConfidence" class="badge badge-ok badge-sm" style="margin-left:6px;"></span></span>
+        <span id="otpCode" class="code">------</span>
+      </div>
+      <button class="btn-copy" onclick="copyValue(selectedOtp, 'copyOtpIcon', 'copyOtpLabel')">
+        <span id="copyOtpIcon">⧉</span> <span id="copyOtpLabel">Copy code</span>
+      </button>
+    </div>
+
+    <!-- Other numbers found in message -->
+    <div id="candidatesRow" class="candidates">
+      <span class="hint">Other numbers found in the message — tap if the detected code looks wrong:</span>
+      <div id="candidatesChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+
+    <!-- Full raw SMS -->
+    <div id="smsBox" class="sms-box" style="display:none;">
+      <span class="k">Full message</span>
+      <div id="smsText" class="sms-text"></div>
+    </div>
+  </div>
+
+  <!-- API 1 -->
+  <div class="panel">
+    <div class="card-section-header">
+      <span class="card-title">API 1 · getNumber</span>
+    </div>
+    <div id="api1Box" class="log-box dim">Waiting to start…</div>
   </div>
 
   <!-- API 3 -->
@@ -480,6 +595,7 @@
   let activeId = null;
   let activeNumber = null;
   let pollStartTime = null;
+  let selectedOtp = null;
 
   function showBanner(msg) {
     const banner = document.getElementById("banner");
@@ -506,6 +622,134 @@
     el.textContent = text;
     el.classList.remove("dim", "err", "warn-text", "purple");
     if (state) el.classList.add(state);
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // ---------------------------------------------------------------------
+  // Smart OTP extraction: given a full SMS/message body, find the digit
+  // sequence that is most likely the actual verification code, rather than
+  // a product/model number, order ID, or the sender's own phone number
+  // that happens to also live in the message.
+  // ---------------------------------------------------------------------
+  const OTP_KEYWORDS = ["otp", "one-time", "one time", "code", "pin", "password", "passcode", "verification", "verify", "confirm", "auth"];
+  const NON_OTP_KEYWORDS = ["model", "order", "ref", "reference", "item", "product", "invoice", "sku", "account no", "acct", "ticket", "case", "tracking", "serial"];
+
+  function extractOtpCandidates(rawText) {
+    const text = rawText;
+    const lower = text.toLowerCase();
+    // digit runs of 3-8, not glued to letters/digits on either side (so "AX2020" or "2020-8891" style
+    // model numbers embedded in longer alphanumeric tokens get excluded at the boundary check)
+    const re = /(?<![A-Za-z0-9])(\d{3,8})(?![A-Za-z0-9])/g;
+    const seen = new Map();
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const val = m[1];
+      const idx = m.index;
+      const windowStart = Math.max(0, idx - 25);
+      const windowEnd = Math.min(text.length, idx + val.length + 25);
+      const window = lower.slice(windowStart, windowEnd);
+
+      let score = 0;
+      if (OTP_KEYWORDS.some(k => window.includes(k))) score += 12;
+      if (NON_OTP_KEYWORDS.some(k => window.includes(k))) score -= 9;
+      if (val.length >= 4 && val.length <= 6) score += 3;
+      else if (val.length === 3) score += 0;
+      else score -= 2;
+      score -= idx * 0.01; // tiny tie-breaker toward earlier occurrences
+
+      if (!seen.has(val) || seen.get(val).score < score) {
+        seen.set(val, { value: val, score, index: idx });
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) => b.score - a.score);
+  }
+
+  function renderOtpResult(rawMessage, isPlainCode) {
+    const otpHero = document.getElementById("otpHero");
+    const otpCodeEl = document.getElementById("otpCode");
+    const confEl = document.getElementById("otpConfidence");
+    const smsBox = document.getElementById("smsBox");
+    const smsTextEl = document.getElementById("smsText");
+    const candidatesRow = document.getElementById("candidatesRow");
+    const candidatesChips = document.getElementById("candidatesChips");
+
+    if (isPlainCode) {
+      // Response was a clean "STATUS_OK:123456" with no extra message text
+      selectedOtp = rawMessage;
+      otpCodeEl.textContent = selectedOtp;
+      confEl.textContent = "direct";
+      confEl.className = "badge badge-ok badge-sm";
+      otpHero.classList.add("show");
+      smsBox.style.display = "none";
+      candidatesRow.classList.remove("show");
+      return;
+    }
+
+    const candidates = extractOtpCandidates(rawMessage);
+
+    // Show full message with the top candidate highlighted
+    smsBox.style.display = "block";
+    if (candidates.length > 0) {
+      const top = candidates[0];
+      const before = escapeHtml(rawMessage.slice(0, top.index));
+      const mid = escapeHtml(rawMessage.slice(top.index, top.index + top.value.length));
+      const after = escapeHtml(rawMessage.slice(top.index + top.value.length));
+      smsTextEl.innerHTML = `${before}<mark>${mid}</mark>${after}`;
+    } else {
+      smsTextEl.textContent = rawMessage;
+    }
+
+    if (candidates.length === 0) {
+      otpHero.classList.remove("show");
+      candidatesRow.classList.remove("show");
+      selectedOtp = null;
+      return;
+    }
+
+    selectedOtp = candidates[0].value;
+    otpCodeEl.textContent = selectedOtp;
+    const strong = candidates[0].score >= 10;
+    confEl.textContent = strong ? "high confidence" : "best guess";
+    confEl.className = strong ? "badge badge-ok badge-sm" : "badge badge-err badge-sm";
+    otpHero.classList.add("show");
+
+    // Other candidates as tappable chips, in case the top guess is wrong
+    if (candidates.length > 1) {
+      candidatesChips.innerHTML = "";
+      candidates.slice(0, 6).forEach(c => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip" + (c.value === selectedOtp ? " selected" : "");
+        chip.textContent = c.value;
+        chip.onclick = () => {
+          selectedOtp = c.value;
+          otpCodeEl.textContent = selectedOtp;
+          confEl.textContent = "manual pick";
+          confEl.className = "badge badge-idle badge-sm";
+          Array.from(candidatesChips.children).forEach(ch => ch.classList.remove("selected"));
+          chip.classList.add("selected");
+          // re-highlight in the message
+          const before = escapeHtml(rawMessage.slice(0, c.index));
+          const mid = escapeHtml(rawMessage.slice(c.index, c.index + c.value.length));
+          const after = escapeHtml(rawMessage.slice(c.index + c.value.length));
+          smsTextEl.innerHTML = `${before}<mark>${mid}</mark>${after}`;
+        };
+        candidatesChips.appendChild(chip);
+      });
+      candidatesRow.classList.add("show");
+    } else {
+      candidatesRow.classList.remove("show");
+    }
+  }
+
+  function resetOtpDisplay() {
+    document.getElementById("otpHero").classList.remove("show");
+    document.getElementById("candidatesRow").classList.remove("show");
+    document.getElementById("smsBox").style.display = "none";
+    selectedOtp = null;
   }
 
   // Check Balance API Call
@@ -536,7 +780,6 @@
       const isOk = text.includes("ACCESS_BALANCE");
       setLogState(balanceBox, `[${now}] ${text}`, isOk ? "purple" : "err");
 
-      // Response format is usually: ACCESS_BALANCE:15.50
       if (isOk) {
         const parts = text.split(":");
         balanceText.textContent = parts[1] ? parts[1].trim() : text;
@@ -586,8 +829,9 @@
     numDisplay.textContent = "—";
     setLogState(api2Box, "Waiting…", "dim");
     setLogState(actionBox, "No action performed yet.", "dim");
+    resetOtpDisplay();
     copyBtn.disabled = true;
-    document.getElementById("copyLabel").textContent = "Copy";
+    document.getElementById("copyNumLabel").textContent = "Copy";
     cancelBtn.disabled = true;
     newCodeBtn.disabled = true;
 
@@ -596,7 +840,6 @@
     startBtnLabel.textContent = "Requesting number…";
 
     try {
-      // 1. Call getNumber with custom parameters
       const url = `${GOOGLE_SCRIPT_URL}?action=getNumber&api_key=${encodeURIComponent(apiKey)}&service=${encodeURIComponent(service)}&country=${encodeURIComponent(country)}&operator=${encodeURIComponent(operator)}`;
       const res1 = await fetch(url);
       const text1 = await res1.text();
@@ -606,7 +849,6 @@
         throw new Error(text1 || "Unrecognized response from API 1.");
       }
 
-      // 2. Parse ID and Phone Number from ACCESS_NUMBER:12345:919876543210
       const parts = text1.split(":");
       const extractedId = parts[1] ? parts[1].trim() : null;
       const extractedNumber = parts[2] ? parts[2].trim() : null;
@@ -624,17 +866,14 @@
         copyBtn.disabled = false;
       }
 
-      // Enable Status Control buttons
       cancelBtn.disabled = false;
       newCodeBtn.disabled = false;
 
-      // 3. Start Polling Loop
       stopBtn.style.display = "block";
       updatePollBadge(true);
       pollStartTime = Date.now();
       startPollTimer();
 
-      // Hit API 2 immediately, then schedule every 5s
       fetchStatus(apiKey);
       pollIntervalId = setInterval(() => {
         if (activeId) {
@@ -674,8 +913,25 @@
 
       setLogState(api2Box, `[${now}] ${text}`, state);
 
-      // Auto-stop polling if OTP code arrives
       if (text.startsWith("STATUS_OK")) {
+        // Response is typically "STATUS_OK:<code>" but some providers echo the
+        // full SMS body too, e.g. "STATUS_OK:363554:Your OTP is 363554 for
+        // Telegram, do not share. Model AX2020-8891." Work out which case we're in.
+        const rest = text.slice("STATUS_OK:".length).replace(/^:/, "").trim();
+        // Actually handle both "STATUS_OK:code" and "STATUS_OK code" style separators safely:
+        const afterPrefix = text.replace(/^STATUS_OK:?/, "").trim();
+
+        if (/^\d+$/.test(afterPrefix)) {
+          // Clean, code-only response — nothing else to parse
+          renderOtpResult(afterPrefix, true);
+        } else if (afterPrefix.length > 0) {
+          // Contains extra text — could be "code:full message" or just the full message.
+          // Strip a leading "digits:" if present so we don't double-count it, then run
+          // extraction across the remaining text (or the whole thing if no such prefix).
+          const leadingCodeMatch = afterPrefix.match(/^(\d{3,8}):(.*)$/s);
+          const messageForExtraction = leadingCodeMatch ? `${leadingCodeMatch[1]} ${leadingCodeMatch[2]}` : afterPrefix;
+          renderOtpResult(messageForExtraction, false);
+        }
         updatePollBadge(false, "ok");
         stopPolling();
       }
@@ -706,31 +962,33 @@
       const now = new Date().toLocaleTimeString();
       setLogState(actionBox, `[${now}] (status=${statusNumber}) ${text}`, "");
 
-      // Stop polling if status is canceled
       if (statusNumber === 8) {
         updatePollBadge(false);
         stopPolling();
+      } else if (statusNumber === 3) {
+        // Requesting a new code invalidates the previous one
+        resetOtpDisplay();
       }
     } catch (err) {
       setLogState(actionBox, `Action failed: ${err.message}`, "err");
     }
   }
 
-  // Copy mobile number to clipboard
-  async function copyNumber() {
-    if (!activeNumber) return;
-    const copyLabel = document.getElementById("copyLabel");
-    const copyIcon = document.getElementById("copyIcon");
+  // Generic clipboard copy for both the phone number and the detected OTP
+  async function copyValue(value, iconId, labelId) {
+    if (!value) return;
+    const iconEl = document.getElementById(iconId);
+    const labelEl = document.getElementById(labelId);
     try {
-      await navigator.clipboard.writeText(activeNumber);
-      copyIcon.textContent = "✓";
-      copyLabel.textContent = "Copied";
+      await navigator.clipboard.writeText(value);
+      iconEl.textContent = "✓";
+      labelEl.textContent = "Copied";
       setTimeout(() => {
-        copyIcon.textContent = "⧉";
-        copyLabel.textContent = "Copy";
+        iconEl.textContent = "⧉";
+        labelEl.textContent = labelId === "copyOtpLabel" ? "Copy code" : "Copy";
       }, 1800);
     } catch (err) {
-      showBanner("Couldn't access the clipboard. Copy the number manually.");
+      showBanner("Couldn't access the clipboard. Copy the value manually.");
     }
   }
 
