@@ -8,8 +8,11 @@
   :root {
     --bg: #0a0e14;
     --bg-grid: #0d1219;
+    --sidebar-bg: #0d131b;
     --card-bg: #12181f;
+    --card-bg-raised: #161d26;
     --border: #232b36;
+    --border-soft: #1a212b;
     --text: #c9d4e0;
     --text-dim: #6b7686;
     --text-bright: #eef2f7;
@@ -26,6 +29,7 @@
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --radius: 10px;
+    --sidebar-w: 300px;
   }
 
   * { box-sizing: border-box; }
@@ -33,31 +37,42 @@
   body {
     font-family: var(--sans);
     background:
-      radial-gradient(circle at 15% 0%, rgba(63,177,255,0.07), transparent 40%),
+      radial-gradient(circle at 15% 0%, rgba(63,177,255,0.06), transparent 40%),
       linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 100% 28px,
       var(--bg);
     color: var(--text);
     margin: 0;
-    padding: clamp(0.75rem, 4vw, 2rem);
-    display: flex;
-    justify-content: center;
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .container { width: 100%; max-width: 640px; }
+  /* ---------------- Shell / layout ---------------- */
 
-  .app-header {
+  .shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 1fr;
+    min-height: 100vh;
+  }
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+  }
+
+  /* Top bar spans full width above the grid */
+  .topbar {
+    grid-column: 1 / -1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.7rem;
-    margin-bottom: 1.1rem;
-    padding: 0 0.15rem;
+    padding: 0.85rem clamp(0.9rem, 3vw, 1.6rem);
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,14,20,0.85);
+    position: sticky;
+    top: 0;
+    z-index: 20;
     flex-wrap: wrap;
   }
-
-  .app-header-left { display: flex; align-items: center; gap: 0.7rem; }
+  .topbar-left { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
 
   .mark {
     width: 34px;
@@ -75,20 +90,37 @@
     box-shadow: 0 0 0 1px rgba(63,177,255,0.25), 0 4px 14px rgba(63,177,255,0.15);
   }
 
-  .app-header h1 {
-    font-size: 1.05rem;
+  .topbar h1 {
+    font-size: 1.02rem;
     margin: 0;
     color: var(--text-bright);
     font-weight: 650;
     letter-spacing: -0.01em;
+    white-space: nowrap;
   }
 
-  .app-header .sub {
-    font-size: 0.72rem;
+  .topbar .sub {
+    font-size: 0.7rem;
     color: var(--text-dim);
     font-family: var(--mono);
     margin-top: 1px;
   }
+
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+  }
+  .pipeline .step {
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: #0f151d;
+  }
+  .pipeline .arrow { color: #3a4453; }
 
   .balance-tag {
     background: var(--purple-dim);
@@ -102,69 +134,71 @@
     align-items: center;
     gap: 6px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .balance-tag .label { color: #9a86c9; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .balance-tag .val { color: #d7c6ff; font-weight: 700; }
 
-  .panel {
+  /* ---------------- Sidebar ---------------- */
+
+  .sidebar {
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  @media (max-width: 900px) {
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  .side-block {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.1rem;
-    margin-bottom: 0.85rem;
+    padding: 1rem;
   }
 
-  .banner {
-    display: none;
-    align-items: flex-start;
-    gap: 8px;
-    background: var(--danger-dim);
-    border: 1px solid rgba(255,93,108,0.35);
-    color: #ffb3ba;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.82rem;
+  .side-block-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     margin-bottom: 0.85rem;
-    line-height: 1.4;
   }
-  .banner.show { display: flex; }
-  .banner strong { color: #fff; }
 
   label {
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--text-dim);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
     font-weight: 650;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
-  .input-group { margin-bottom: 0.9rem; }
+  .input-group { margin-bottom: 0.8rem; }
   .input-group:last-child { margin-bottom: 0; }
-
-  .key-row { display: flex; gap: 8px; align-items: stretch; }
 
   .key-field {
     position: relative;
     display: flex;
     align-items: center;
-    flex: 1;
-    min-width: 0;
   }
 
   input[type="text"], input[type="password"] {
     width: 100%;
-    padding: 11px 12px;
+    padding: 10px 12px;
     background: #0a0f16;
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text-bright);
     font-family: var(--mono);
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     transition: border-color 0.15s ease;
   }
-
   .key-field input { padding-right: 44px; }
 
   input:focus {
@@ -179,7 +213,7 @@
     background: none;
     border: none;
     color: var(--text-dim);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-family: var(--mono);
     font-weight: 700;
     padding: 6px 8px;
@@ -192,25 +226,19 @@
     background: var(--purple-dim);
     color: #d7c6ff;
     border-color: rgba(180,139,255,0.3);
-    font-size: 0.8rem;
-    padding: 0 16px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    font-size: 0.78rem;
+    padding: 9px 12px;
+    width: 100%;
+    margin-top: 0.55rem;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
   }
 
-  @media (max-width: 420px) {
-    .key-row { flex-wrap: wrap; }
-    .btn-balance { flex: 1 1 100%; padding: 11px 14px; justify-content: center; }
-  }
-
-  .grid-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  @media (max-width: 460px) { .grid-row { grid-template-columns: 1fr; } }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
   button {
-    padding: 12px 14px;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 8px;
     font-weight: 650;
@@ -229,20 +257,19 @@
     background: linear-gradient(135deg, var(--accent), #1c7fc4);
     color: #041018;
     width: 100%;
-    font-size: 0.92rem;
-    padding: 13px 14px;
+    font-size: 0.9rem;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-top: 0.9rem;
   }
 
-  .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
 
-  .btn-cancel { background: var(--danger-dim); color: #ffb3ba; border-color: rgba(255,93,108,0.3); flex: 1 1 45%; }
-  .btn-new-code { background: var(--warn-dim); color: #ffd28a; border-color: rgba(240,168,60,0.3); flex: 1 1 45%; }
-  .btn-stop { background: #1b2229; color: var(--text); flex: 1 1 100%; display: none; }
+  .btn-cancel { background: var(--danger-dim); color: #ffb3ba; border-color: rgba(255,93,108,0.3); flex: 1 1 45%; padding: 10px 12px; font-size: 0.8rem; }
+  .btn-new-code { background: var(--warn-dim); color: #ffd28a; border-color: rgba(240,168,60,0.3); flex: 1 1 45%; padding: 10px 12px; font-size: 0.8rem; }
+  .btn-stop { background: #1b2229; color: var(--text); flex: 1 1 100%; display: none; padding: 10px 12px; font-size: 0.8rem; }
   .btn-copy {
     background: var(--ok-dim);
     color: #7fe9b9;
@@ -267,65 +294,75 @@
   .spinner.dark { border: 2px solid rgba(215,198,255,0.25); border-top-color: #d7c6ff; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .card-section {
-    background: #0a0f16;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    margin-top: 0.85rem;
-  }
-  .panel > .card-section:first-child { margin-top: 0; }
+  /* ---------------- Main content ---------------- */
 
-  .card-section-header {
+  .main {
+    padding: clamp(0.9rem, 3vw, 1.6rem);
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    gap: 8px;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
   }
 
-  .card-title {
-    font-size: 0.72rem;
-    font-weight: 700;
+  .banner {
+    display: none;
+    align-items: flex-start;
+    gap: 8px;
+    background: var(--danger-dim);
+    border: 1px solid rgba(255,93,108,0.35);
+    color: #ffb3ba;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  .banner.show { display: flex; }
+  .banner strong { color: #fff; }
+
+  /* KPI stat row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 720px) { .kpi-row { grid-template-columns: 1fr 1fr; } }
+
+  .kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .kpi-card .kpi-label {
+    font-size: 0.66rem;
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    font-weight: 700;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
   }
-
-  .log-box {
+  .kpi-card .kpi-value {
     font-family: var(--mono);
-    font-size: 0.82rem;
-    color: #8fe3b0;
-    word-break: break-all;
-    white-space: pre-wrap;
-    line-height: 1.5;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .log-box.dim { color: var(--text-dim); }
-  .log-box.err { color: #ff9aa4; }
-  .log-box.warn-text { color: var(--warn); }
-  .log-box.purple { color: #d7c6ff; }
-
-  .details-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--border);
-    font-family: var(--mono);
-    font-size: 0.88rem;
-    gap: 10px;
-  }
-  .details-row:last-of-type { border-bottom: none; }
-  .details-row .k { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
-  .details-row .v { color: var(--text-bright); font-weight: 650; text-align: right; word-break: break-all; }
-  .num-row .v { color: var(--ok); font-size: 1.05rem; }
+  .kpi-card .kpi-value.accent-ok { color: var(--ok); }
+  .kpi-card .kpi-value.accent-purple { color: var(--purple); }
 
   .badge {
-    font-size: 0.66rem;
-    padding: 3px 8px;
+    font-size: 0.62rem;
+    padding: 2px 8px;
     border-radius: 20px;
     font-weight: 700;
     letter-spacing: 0.03em;
@@ -336,26 +373,48 @@
     white-space: nowrap;
   }
   .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
   .badge-polling { background: var(--accent-dim); color: var(--accent); }
   .badge-polling::before { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
-
   .badge-idle { background: #1b222b; color: var(--text-dim); }
   .badge-ok { background: var(--ok-dim); color: var(--ok); }
   .badge-err { background: var(--danger-dim); color: var(--danger); }
   .badge-sm { font-size: 0.6rem; padding: 2px 7px; }
 
-  .timer { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); }
+  .timer { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
 
-  /* OTP result block */
+  /* Result panel */
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .panel-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
   .otp-hero {
     display: none;
     background: linear-gradient(135deg, rgba(53,212,136,0.1), rgba(53,212,136,0.03));
     border: 1px solid rgba(53,212,136,0.35);
     border-radius: 10px;
-    padding: 14px;
-    margin-top: 0.85rem;
+    padding: 16px;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
@@ -369,19 +428,26 @@
     letter-spacing: 0.06em;
     font-weight: 700;
     display: block;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
   }
   .otp-hero-left .code {
     font-family: var(--mono);
-    font-size: 1.7rem;
+    font-size: 1.9rem;
     font-weight: 700;
     color: var(--text-bright);
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
   }
 
-  .sms-box {
-    margin-top: 0.7rem;
+  .otp-empty {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 1.4rem 0.5rem;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
   }
+
+  .sms-box { margin-top: 0.85rem; }
   .sms-box .k {
     font-size: 0.68rem;
     color: var(--text-dim);
@@ -412,7 +478,7 @@
   }
 
   .candidates {
-    margin-top: 0.6rem;
+    margin-top: 0.65rem;
     display: none;
     flex-wrap: wrap;
     gap: 6px;
@@ -438,6 +504,34 @@
   .chip:hover { border-color: var(--accent); color: var(--text-bright); }
   .chip.selected { background: var(--ok-dim); border-color: rgba(53,212,136,0.4); color: var(--ok); }
 
+  /* Activity log grid (API 1 / 2 / 3) */
+  .log-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 820px) { .log-grid { grid-template-columns: 1fr; } }
+
+  .log-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.95rem;
+    min-width: 0;
+  }
+  .log-box {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: #8fe3b0;
+    word-break: break-all;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+  .log-box.dim { color: var(--text-dim); }
+  .log-box.err { color: #ff9aa4; }
+  .log-box.warn-text { color: var(--warn); }
+  .log-box.purple { color: #d7c6ff; }
+
   @media (prefers-reduced-motion: reduce) {
     .spinner, .badge-polling::before { animation: none; }
   }
@@ -445,15 +539,23 @@
 </head>
 <body>
 
-<div class="container">
+<div class="shell">
 
-  <div class="app-header">
-    <div class="app-header-left">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
       <div class="mark">OTP</div>
       <div>
         <h1>OTP Service Dashboard</h1>
-        <div class="sub">getNumber → getStatus → setStatus</div>
+        <div class="sub">Live number &amp; verification-code monitor</div>
       </div>
+    </div>
+    <div class="pipeline">
+      <span class="step">1 getNumber</span>
+      <span class="arrow">→</span>
+      <span class="step">2 getStatus</span>
+      <span class="arrow">→</span>
+      <span class="step">3 setStatus</span>
     </div>
     <div class="balance-tag">
       <span class="label">Balance</span>
@@ -461,16 +563,13 @@
     </div>
   </div>
 
-  <div id="banner" class="banner">
-    <span>⚠️</span>
-    <span id="bannerText"></span>
-  </div>
+  <!-- Sidebar: config + controls -->
+  <div class="sidebar">
 
-  <!-- Config -->
-  <div class="panel">
-    <div class="input-group">
-      <label for="apiKey">API Key</label>
-      <div class="key-row">
+    <div class="side-block">
+      <div class="side-block-title">Credentials</div>
+      <div class="input-group" style="margin-bottom:0;">
+        <label for="apiKey">API Key</label>
         <div class="key-field">
           <input type="password" id="apiKey" placeholder="Enter your API key" autocomplete="off">
           <button type="button" class="toggle-visibility" id="visToggle" onclick="toggleKeyVisibility()">SHOW</button>
@@ -482,106 +581,127 @@
       </div>
     </div>
 
-    <div class="grid-row">
-      <div class="input-group" style="margin-bottom:0;">
-        <label for="serviceInput">Service</label>
-        <input type="text" id="serviceInput" value="qfp">
-      </div>
-      <div class="input-group" style="margin-bottom:0;">
-        <label for="countryInput">Country</label>
-        <input type="text" id="countryInput" value="22">
-      </div>
-      <div class="input-group" style="margin-bottom:0;">
-        <label for="operatorInput">Operator</label>
-        <input type="text" id="operatorInput" value="16">
+    <div class="side-block">
+      <div class="side-block-title">Request Parameters</div>
+      <div class="grid-3">
+        <div class="input-group" style="margin-bottom:0;">
+          <label for="serviceInput">Service</label>
+          <input type="text" id="serviceInput" value="qfp">
+        </div>
+        <div class="input-group" style="margin-bottom:0;">
+          <label for="countryInput">Country</label>
+          <input type="text" id="countryInput" value="22">
+        </div>
+        <div class="input-group" style="margin-bottom:0;">
+          <label for="operatorInput">Operator</label>
+          <input type="text" id="operatorInput" value="16">
+        </div>
       </div>
     </div>
 
-    <button id="startBtn" class="btn-primary" onclick="startFlow()">
-      <span id="startSpinner" class="spinner"></span>
-      <span id="startBtnLabel">Get Number &amp; Start Polling</span>
-    </button>
-
-    <div class="btn-group">
-      <button id="stopBtn" class="btn-stop" onclick="stopPolling()">Stop Polling</button>
-      <button id="cancelBtn" class="btn-cancel" onclick="setStatusAction(8)" disabled>Cancel Number</button>
-      <button id="newCodeBtn" class="btn-new-code" onclick="setStatusAction(3)" disabled>Request New Code</button>
-    </div>
-  </div>
-
-  <!-- Balance -->
-  <div class="panel">
-    <div class="card-section-header">
-      <span class="card-title">Balance API · getBalance</span>
-    </div>
-    <div id="balanceBox" class="log-box dim">Tap "Check Balance" above to fetch your account balance.</div>
-  </div>
-
-  <!-- Extracted details -->
-  <div class="panel">
-    <div class="card-section-header">
-      <span class="card-title">Extracted Details</span>
-      <button id="copyNumBtn" class="btn-copy" onclick="copyValue(activeNumber, 'copyNumIcon', 'copyNumLabel')" disabled>
-        <span id="copyNumIcon">⧉</span> <span id="copyNumLabel">Copy</span>
+    <div class="side-block">
+      <div class="side-block-title">Controls</div>
+      <button id="startBtn" class="btn-primary" onclick="startFlow()">
+        <span id="startSpinner" class="spinner"></span>
+        <span id="startBtnLabel">Get Number &amp; Start Polling</span>
       </button>
-    </div>
-    <div class="details-row">
-      <span class="k">Transaction ID</span>
-      <span id="idDisplay" class="v">—</span>
-    </div>
-    <div class="details-row num-row">
-      <span class="k">Phone Number</span>
-      <span id="numDisplay" class="v">—</span>
-    </div>
-  </div>
-
-  <!-- API 2 / OTP -->
-  <div class="panel">
-    <div class="card-section-header">
-      <span class="card-title">API 2 · getStatus</span>
-      <span id="pollBadge" class="badge badge-idle">Idle</span>
-    </div>
-    <div id="api2Box" class="log-box dim">Waiting for a transaction ID…</div>
-    <div id="pollTimer" class="timer" style="margin-top:6px; display:none;"></div>
-
-    <!-- Detected OTP -->
-    <div id="otpHero" class="otp-hero">
-      <div class="otp-hero-left">
-        <span class="k">Detected OTP <span id="otpConfidence" class="badge badge-ok badge-sm" style="margin-left:6px;"></span></span>
-        <span id="otpCode" class="code">------</span>
+      <div class="btn-group" style="margin-top:8px;">
+        <button id="stopBtn" class="btn-stop" onclick="stopPolling()">Stop Polling</button>
+        <button id="cancelBtn" class="btn-cancel" onclick="setStatusAction(8)" disabled>Cancel Number</button>
+        <button id="newCodeBtn" class="btn-new-code" onclick="setStatusAction(3)" disabled>Request New Code</button>
       </div>
-      <button class="btn-copy" onclick="copyValue(selectedOtp, 'copyOtpIcon', 'copyOtpLabel')">
-        <span id="copyOtpIcon">⧉</span> <span id="copyOtpLabel">Copy code</span>
-      </button>
     </div>
 
-    <!-- Other numbers found in message -->
-    <div id="candidatesRow" class="candidates">
-      <span class="hint">Other numbers found in the message — tap if the detected code looks wrong:</span>
-      <div id="candidatesChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+    <div class="side-block">
+      <div class="side-block-title">Balance API · getBalance</div>
+      <div id="balanceBox" class="log-box dim">Tap "Check Balance" to fetch your account balance.</div>
     </div>
 
-    <!-- Full raw SMS -->
-    <div id="smsBox" class="sms-box" style="display:none;">
-      <span class="k">Full message</span>
-      <div id="smsText" class="sms-text"></div>
-    </div>
   </div>
 
-  <!-- API 1 -->
-  <div class="panel">
-    <div class="card-section-header">
-      <span class="card-title">API 1 · getNumber</span>
-    </div>
-    <div id="api1Box" class="log-box dim">Waiting to start…</div>
-  </div>
+  <!-- Main content -->
+  <div class="main">
 
-  <!-- API 3 -->
-  <div class="panel">
-    <div class="card-section-header">
-      <span class="card-title">API 3 · setStatus</span>
+    <div id="banner" class="banner">
+      <span>⚠️</span>
+      <span id="bannerText"></span>
     </div>
-    <div id="actionBox" class="log-box dim">No action performed yet.</div>
+
+    <!-- KPI row -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <span class="kpi-label">Poll Status <span id="pollBadge" class="badge badge-idle">Idle</span></span>
+        <span id="pollTimer" class="kpi-value" style="font-size:0.78rem; color:var(--text-dim);">Not polling</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Transaction ID</span>
+        <span id="idDisplay" class="kpi-value">—</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Phone Number
+          <button id="copyNumBtn" class="btn-copy" style="padding:2px 8px; font-size:0.62rem;" onclick="copyValue(activeNumber, 'copyNumIcon', 'copyNumLabel')" disabled>
+            <span id="copyNumIcon">⧉</span><span id="copyNumLabel">Copy</span>
+          </button>
+        </span>
+        <span id="numDisplay" class="kpi-value accent-ok">—</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Account Balance</span>
+        <span class="kpi-value accent-purple" id="balanceTextEcho">—</span>
+      </div>
+    </div>
+
+    <!-- OTP result -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">API 2 · getStatus — Verification Code</span>
+      </div>
+
+      <div id="otpHero" class="otp-hero">
+        <div class="otp-hero-left">
+          <span class="k">Detected OTP <span id="otpConfidence" class="badge badge-ok badge-sm" style="margin-left:6px;"></span></span>
+          <span id="otpCode" class="code">------</span>
+        </div>
+        <button class="btn-copy" onclick="copyValue(selectedOtp, 'copyOtpIcon', 'copyOtpLabel')">
+          <span id="copyOtpIcon">⧉</span> <span id="copyOtpLabel">Copy code</span>
+        </button>
+      </div>
+
+      <div id="otpEmpty" class="otp-empty">No verification code yet — start a request to begin polling.</div>
+
+      <div id="candidatesRow" class="candidates">
+        <span class="hint">Other numbers found in the message — tap if the detected code looks wrong:</span>
+        <div id="candidatesChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      </div>
+
+      <div id="smsBox" class="sms-box" style="display:none;">
+        <span class="k">Full message</span>
+        <div id="smsText" class="sms-text"></div>
+      </div>
+    </div>
+
+    <!-- Activity logs -->
+    <div class="log-grid">
+      <div class="log-panel">
+        <div class="panel-header">
+          <span class="panel-title">API 1 · getNumber</span>
+        </div>
+        <div id="api1Box" class="log-box dim">Waiting to start…</div>
+      </div>
+      <div class="log-panel">
+        <div class="panel-header">
+          <span class="panel-title">API 2 · getStatus</span>
+        </div>
+        <div id="api2Box" class="log-box dim">Waiting for a transaction ID…</div>
+      </div>
+      <div class="log-panel">
+        <div class="panel-header">
+          <span class="panel-title">API 3 · setStatus</span>
+        </div>
+        <div id="actionBox" class="log-box dim">No action performed yet.</div>
+      </div>
+    </div>
+
   </div>
 
 </div>
@@ -669,6 +789,7 @@
 
   function renderOtpResult(rawMessage, isPlainCode) {
     const otpHero = document.getElementById("otpHero");
+    const otpEmpty = document.getElementById("otpEmpty");
     const otpCodeEl = document.getElementById("otpCode");
     const confEl = document.getElementById("otpConfidence");
     const smsBox = document.getElementById("smsBox");
@@ -683,6 +804,7 @@
       confEl.textContent = "direct";
       confEl.className = "badge badge-ok badge-sm";
       otpHero.classList.add("show");
+      otpEmpty.style.display = "none";
       smsBox.style.display = "none";
       candidatesRow.classList.remove("show");
       return;
@@ -704,11 +826,13 @@
 
     if (candidates.length === 0) {
       otpHero.classList.remove("show");
+      otpEmpty.style.display = "block";
       candidatesRow.classList.remove("show");
       selectedOtp = null;
       return;
     }
 
+    otpEmpty.style.display = "none";
     selectedOtp = candidates[0].value;
     otpCodeEl.textContent = selectedOtp;
     const strong = candidates[0].score >= 10;
@@ -747,6 +871,7 @@
 
   function resetOtpDisplay() {
     document.getElementById("otpHero").classList.remove("show");
+    document.getElementById("otpEmpty").style.display = "block";
     document.getElementById("candidatesRow").classList.remove("show");
     document.getElementById("smsBox").style.display = "none";
     selectedOtp = null;
@@ -757,6 +882,7 @@
     const apiKey = document.getElementById("apiKey").value.trim();
     const balanceBox = document.getElementById("balanceBox");
     const balanceText = document.getElementById("balanceText");
+    const balanceTextEcho = document.getElementById("balanceTextEcho");
     const balanceBtnLabel = document.getElementById("balanceBtnLabel");
     const balanceSpinner = document.getElementById("balanceSpinner");
 
@@ -782,14 +908,18 @@
 
       if (isOk) {
         const parts = text.split(":");
-        balanceText.textContent = parts[1] ? parts[1].trim() : text;
+        const val = parts[1] ? parts[1].trim() : text;
+        balanceText.textContent = val;
+        balanceTextEcho.textContent = val;
       } else {
         balanceText.textContent = "Error";
+        balanceTextEcho.textContent = "Error";
         showBanner(`<strong>Couldn't fetch balance.</strong> ${text}`);
       }
     } catch (err) {
       setLogState(balanceBox, `Error: ${err.message}`, "err");
       balanceText.textContent = "Error";
+      balanceTextEcho.textContent = "Error";
     } finally {
       balanceSpinner.classList.remove("show");
       balanceBtnLabel.textContent = "Check Balance";
@@ -994,10 +1124,9 @@
 
   function startPollTimer() {
     const timerEl = document.getElementById("pollTimer");
-    timerEl.style.display = "block";
     pollTickId = setInterval(() => {
       const secs = Math.floor((Date.now() - pollStartTime) / 1000);
-      timerEl.textContent = `Polling for ${secs}s · next check in ${5 - (secs % 5)}s`;
+      timerEl.textContent = `Polling ${secs}s · next in ${5 - (secs % 5)}s`;
     }, 1000);
   }
 
@@ -1011,7 +1140,7 @@
       clearInterval(pollTickId);
       pollTickId = null;
     }
-    document.getElementById("pollTimer").style.display = "none";
+    document.getElementById("pollTimer").textContent = "Not polling";
     document.getElementById("stopBtn").style.display = "none";
     if (document.getElementById("pollBadge").classList.contains("badge-polling")) {
       updatePollBadge(false);
