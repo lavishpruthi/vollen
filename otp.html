@@ -28,11 +28,15 @@
     --purple-dim: #2a1f47;
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --radius: 10px;
-    --sidebar-w: 300px;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --sidebar-w: 320px;
+    --tap: 44px;
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html { -webkit-text-size-adjust: 100%; }
 
   body {
     font-family: var(--sans);
@@ -43,114 +47,78 @@
     color: var(--text);
     margin: 0;
     min-height: 100vh;
-    -webkit-tap-highlight-color: transparent;
+    min-height: 100dvh;
   }
 
-  /* ---------------- Shell / layout ---------------- */
-
+  /* ---------- Layout shell ---------- */
   .shell {
     display: grid;
     grid-template-columns: var(--sidebar-w) 1fr;
     min-height: 100vh;
-  }
-  @media (max-width: 900px) {
-    .shell { grid-template-columns: 1fr; }
+    min-height: 100dvh;
   }
 
-  /* Top bar spans full width above the grid */
   .topbar {
     grid-column: 1 / -1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.7rem;
-    padding: 0.85rem clamp(0.9rem, 3vw, 1.6rem);
+    padding: 0.75rem clamp(0.9rem, 3vw, 1.6rem);
     border-bottom: 1px solid var(--border);
-    background: rgba(10,14,20,0.85);
+    background: rgba(10,14,20,0.9);
+    backdrop-filter: blur(6px);
     position: sticky;
     top: 0;
-    z-index: 20;
-    flex-wrap: wrap;
+    z-index: 30;
   }
   .topbar-left { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
 
+  .hamburger {
+    display: none;
+    width: var(--tap); height: var(--tap);
+    align-items: center; justify-content: center;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); flex: none; padding: 0;
+  }
+  .hamburger svg { width: 18px; height: 18px; stroke: var(--text-bright); }
+
   .mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 9px;
+    width: 34px; height: 34px; border-radius: 9px;
     background: linear-gradient(135deg, var(--accent), #1a6fa8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: #041018;
-    flex-shrink: 0;
-    box-shadow: 0 0 0 1px rgba(63,177,255,0.25), 0 4px 14px rgba(63,177,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 700; font-size: 0.85rem; color: #041018;
+    flex: none;
   }
 
-  .topbar h1 {
-    font-size: 1.02rem;
-    margin: 0;
-    color: var(--text-bright);
-    font-weight: 650;
-    letter-spacing: -0.01em;
-    white-space: nowrap;
-  }
-
-  .topbar .sub {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    font-family: var(--mono);
-    margin-top: 1px;
-  }
-
-  .pipeline {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    color: var(--text-dim);
-  }
-  .pipeline .step {
-    padding: 3px 9px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: #0f151d;
-  }
-  .pipeline .arrow { color: #3a4453; }
+  .topbar h1 { font-size: 1.02rem; margin: 0; color: var(--text-bright); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar .sub { font-size: 0.7rem; color: var(--text-dim); font-family: var(--mono); white-space: nowrap; }
+  .topbar-titles { min-width: 0; }
 
   .balance-tag {
     background: var(--purple-dim);
     border: 1px solid rgba(180,139,255,0.3);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-family: var(--mono);
-    color: var(--purple);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 0.78rem; font-family: var(--mono); color: var(--purple);
+    display: flex; align-items: center; gap: 6px;
+    flex: none;
   }
-  .balance-tag .label { color: #9a86c9; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .balance-tag .val { color: #d7c6ff; font-weight: 700; }
 
-  /* ---------------- Sidebar ---------------- */
+  /* ---------- Sidebar / Drawer ---------- */
+  .drawer-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(4,6,10,0.6);
+    z-index: 39;
+  }
+  .drawer-backdrop.show { display: block; }
 
   .sidebar {
     background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
     padding: 1.1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.9rem;
-  }
-  @media (max-width: 900px) {
-    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    display: flex; flex-direction: column; gap: 0.9rem;
   }
 
   .side-block {
@@ -159,381 +127,222 @@
     border-radius: var(--radius);
     padding: 1rem;
   }
-
   .side-block-title {
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 0.85rem;
+    font-size: 0.68rem; font-weight: 700; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.85rem;
+    display: flex; justify-content: space-between; align-items: center;
   }
 
   label {
-    display: block;
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    margin-bottom: 0.35rem;
-    font-weight: 650;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    display: block; font-size: 0.7rem; color: var(--text-dim);
+    margin-bottom: 0.35rem; font-weight: 650; text-transform: uppercase;
   }
-
   .input-group { margin-bottom: 0.8rem; }
   .input-group:last-child { margin-bottom: 0; }
-
-  .key-field {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
   input[type="text"], input[type="password"] {
-    width: 100%;
-    padding: 10px 12px;
-    background: #0a0f16;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text-bright);
-    font-family: var(--mono);
-    font-size: 0.88rem;
-    transition: border-color 0.15s ease;
+    width: 100%; padding: 11px; min-height: var(--tap);
+    background: #0a0f16; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text-bright);
+    font-family: var(--mono); font-size: 0.9rem;
   }
-  .key-field input { padding-right: 44px; }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(63,177,255,0.15); }
 
-  input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(63,177,255,0.12);
-  }
-
+  .key-field { position: relative; display: flex; align-items: center; }
+  .key-field input { padding-right: 48px; }
   .toggle-visibility {
-    position: absolute;
-    right: 6px;
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-size: 0.68rem;
-    font-family: var(--mono);
-    font-weight: 700;
-    padding: 6px 8px;
-    cursor: pointer;
-    border-radius: 6px;
+    position: absolute; right: 4px; background: none; border: none;
+    color: var(--text-dim); font-size: 0.65rem; font-family: var(--mono);
+    cursor: pointer; padding: 8px 10px; min-height: 36px;
   }
-  .toggle-visibility:hover { color: var(--text-bright); background: rgba(255,255,255,0.05); }
-
-  .btn-balance {
-    background: var(--purple-dim);
-    color: #d7c6ff;
-    border-color: rgba(180,139,255,0.3);
-    font-size: 0.78rem;
-    padding: 9px 12px;
-    width: 100%;
-    margin-top: 0.55rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-  }
-
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
   button {
     border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    font-weight: 650;
-    font-size: 0.86rem;
-    cursor: pointer;
-    transition: filter 0.15s ease, transform 0.05s ease;
-    font-family: var(--sans);
-    -webkit-user-select: none;
-    user-select: none;
+    border-radius: var(--radius-sm); font-weight: 650; cursor: pointer;
+    font-family: var(--sans); transition: filter 0.15s ease, transform 0.1s ease;
   }
-  button:active { transform: scale(0.985); }
   button:hover:not(:disabled) { filter: brightness(1.12); }
-  button:disabled { opacity: 0.38; cursor: not-allowed; filter: none; }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.6); }
+  button:focus-visible, input:focus-visible, .icon-btn:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
 
   .btn-primary {
     background: linear-gradient(135deg, var(--accent), #1c7fc4);
-    color: #041018;
-    width: 100%;
-    font-size: 0.9rem;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    color: #041018; width: 100%; padding: 12px; font-size: 0.9rem; min-height: var(--tap);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
   }
-
-  .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
-
-  .btn-cancel { background: var(--danger-dim); color: #ffb3ba; border-color: rgba(255,93,108,0.3); flex: 1 1 45%; padding: 10px 12px; font-size: 0.8rem; }
-  .btn-new-code { background: var(--warn-dim); color: #ffd28a; border-color: rgba(240,168,60,0.3); flex: 1 1 45%; padding: 10px 12px; font-size: 0.8rem; }
-  .btn-stop { background: #1b2229; color: var(--text); flex: 1 1 100%; display: none; padding: 10px 12px; font-size: 0.8rem; }
-  .btn-copy {
-    background: var(--ok-dim);
-    color: #7fe9b9;
-    border-color: rgba(53,212,136,0.3);
-    padding: 5px 11px;
-    font-size: 0.72rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+  .btn-secondary {
+    background: #1b222b; color: var(--text); padding: 10px; font-size: 0.78rem; width: 100%;
+    margin-top: 6px; min-height: 40px;
   }
+  .btn-balance {
+    background: var(--purple-dim); color: #d7c6ff; border-color: rgba(180,139,255,0.3);
+    font-size: 0.78rem; padding: 10px; width: 100%; margin-top: 0.5rem; min-height: 40px;
+  }
+  .btn-cancel {
+    background: var(--danger-dim); color: #ffb3ba; border-color: rgba(255,93,108,0.3);
+    padding: 10px 14px; font-size: 0.78rem; font-family: var(--mono); min-height: var(--tap); flex: 1;
+  }
+  .btn-new-code {
+    background: var(--warn-dim); color: #ffd28a; border-color: rgba(240,168,60,0.3);
+    padding: 10px 14px; font-size: 0.78rem; min-height: var(--tap); flex: 1;
+  }
+  .icon-btn {
+    background: var(--card-bg-raised); color: var(--text-dim); border: 1px solid var(--border);
+    width: var(--tap); height: var(--tap); flex: none; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm);
+  }
+  .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+  .icon-btn.copied { color: var(--ok); border-color: rgba(53,212,136,0.4); }
 
-  .spinner {
-    width: 14px; height: 14px;
-    border: 2px solid rgba(4,16,24,0.25);
-    border-top-color: #041018;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+  .drawer-close {
     display: none;
-    flex-shrink: 0;
+    background: none; border: none; color: var(--text-dim);
+    width: var(--tap); height: var(--tap); align-items: center; justify-content: center;
   }
-  .spinner.show { display: inline-block; }
-  .spinner.dark { border: 2px solid rgba(215,198,255,0.25); border-top-color: #d7c6ff; }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ---------------- Main content ---------------- */
-
+  /* ---------- Main ---------- */
   .main {
     padding: clamp(0.9rem, 3vw, 1.6rem);
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    min-width: 0;
+    display: flex; flex-direction: column; gap: 1rem; min-width: 0;
   }
 
   .banner {
-    display: none;
-    align-items: flex-start;
-    gap: 8px;
-    background: var(--danger-dim);
-    border: 1px solid rgba(255,93,108,0.35);
-    color: #ffb3ba;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.82rem;
-    line-height: 1.4;
+    display: none; background: var(--danger-dim); border: 1px solid rgba(255,93,108,0.35);
+    color: #ffb3ba; border-radius: var(--radius-sm); padding: 12px 14px; font-size: 0.85rem;
+    align-items: flex-start; justify-content: space-between; gap: 10px;
   }
   .banner.show { display: flex; }
-  .banner strong { color: #fff; }
+  .banner button { background: none; border: none; color: #ffb3ba; opacity: 0.7; padding: 2px; flex: none; }
 
-  /* KPI stat row */
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+  .main-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
   }
-  @media (max-width: 720px) { .kpi-row { grid-template-columns: 1fr 1fr; } }
 
-  .kpi-card {
+  .cards-grid {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+
+  .item-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 0.85rem 0.95rem;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
+    padding: 1rem;
+    display: flex; flex-direction: column; gap: 10px;
+    animation: cardIn 0.25s ease;
   }
-  .kpi-card .kpi-label {
-    font-size: 0.66rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
+  @keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .item-card.completed { border-color: rgba(53,212,136,0.4); box-shadow: 0 0 0 1px rgba(53,212,136,0.08); }
+
+  .card-top {
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    border-bottom: 1px solid var(--border-soft); padding-bottom: 10px;
   }
-  .kpi-card .kpi-value {
-    font-family: var(--mono);
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--text-bright);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .kpi-card .kpi-value.accent-ok { color: var(--ok); }
-  .kpi-card .kpi-value.accent-purple { color: var(--purple); }
+  .card-top-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+  .card-phone { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; color: var(--text-bright); letter-spacing: 0.01em; }
+  .card-meta { display: flex; align-items: center; gap: 8px; }
+  .card-tx { font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim); }
 
   .badge {
-    font-size: 0.62rem;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
+    font-size: 0.62rem; padding: 3px 9px; border-radius: 20px; font-weight: 700;
+    text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
   }
-  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .badge-polling { background: var(--accent-dim); color: var(--accent); }
-  .badge-polling::before { animation: pulse 1.2s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
-  .badge-idle { background: #1b222b; color: var(--text-dim); }
   .badge-ok { background: var(--ok-dim); color: var(--ok); }
-  .badge-err { background: var(--danger-dim); color: var(--danger); }
-  .badge-sm { font-size: 0.6rem; padding: 2px 7px; }
+  .badge-wait { background: var(--warn-dim); color: var(--warn); }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge-polling .badge-dot { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 
-  .timer { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
-
-  /* Result panel */
-  .panel {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.1rem;
+  .card-body {
+    display: grid; grid-template-columns: minmax(0,220px) 1fr; gap: 12px;
   }
 
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    gap: 8px;
+  .card-otp-pane {
+    background: #0a0f16; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; gap: 8px; text-align: center;
   }
-  .panel-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .card-otp-pane.success { border-color: rgba(53,212,136,0.4); background: linear-gradient(180deg, rgba(53,212,136,0.06), #0a0f16 60%); }
+  .card-otp-title { font-size: 0.63rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; }
+  .card-otp-val { font-family: var(--mono); font-size: 1.7rem; font-weight: 800; color: var(--text-bright); letter-spacing: 0.1em; }
+  .card-otp-val.pending { color: var(--text-dim); font-size: 1.4rem; }
+  .card-otp-val.reveal { animation: reveal 0.4s ease; }
+  @keyframes reveal { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+  .otp-copy-row { display: flex; gap: 6px; align-items: center; }
+
+  .card-log-pane { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+
+  details.log-details { border: none; }
+  details.log-details summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;
+    letter-spacing: 0.04em; padding: 6px 0;
+  }
+  details.log-details summary::-webkit-details-marker { display: none; }
+  details.log-details summary .chev { transition: transform 0.15s ease; width: 12px; height: 12px; stroke: var(--text-dim); }
+  details.log-details[open] summary .chev { transform: rotate(90deg); }
+
+  .raw-response {
+    background: #0a0f16; border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 11px; font-family: var(--mono); font-size: 0.73rem;
+    color: #9fe2bf; word-break: break-all; white-space: pre-wrap; max-height: 100px; overflow-y: auto;
   }
 
-  .otp-hero {
-    display: none;
-    background: linear-gradient(135deg, rgba(53,212,136,0.1), rgba(53,212,136,0.03));
-    border: 1px solid rgba(53,212,136,0.35);
-    border-radius: 10px;
-    padding: 16px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
+  .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; align-items: center; }
+
+  .empty-state {
+    text-align: center; padding: 2.5rem 1.5rem; color: var(--text-dim); font-size: 0.85rem;
+    border: 1px dashed var(--border); border-radius: var(--radius);
   }
-  .otp-hero.show { display: flex; }
-  .otp-hero-left .k {
-    font-size: 0.68rem;
-    color: #7fe9b9;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 700;
-    display: block;
-    margin-bottom: 4px;
+  .empty-state .emoji { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; }
+  .empty-state strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 0.9rem; }
+
+  /* ---------- Toasts ---------- */
+  .toast-stack {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 100; align-items: center;
+    width: min(92vw, 360px);
   }
-  .otp-hero-left .code {
-    font-family: var(--mono);
-    font-size: 1.9rem;
-    font-weight: 700;
-    color: var(--text-bright);
-    letter-spacing: 0.07em;
+  .toast {
+    background: var(--card-bg-raised); border: 1px solid var(--border); color: var(--text-bright);
+    padding: 10px 16px; border-radius: 20px; font-size: 0.8rem; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    display: flex; align-items: center; gap: 8px; animation: toastIn 0.2s ease;
+  }
+  .toast.ok { border-color: rgba(53,212,136,0.4); }
+  .toast svg { width: 14px; height: 14px; stroke: var(--ok); flex: none; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastOut { to { opacity: 0; transform: translateY(8px); } }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .hamburger { display: flex; }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: min(85vw, 340px);
+      z-index: 40; overflow-y: auto; transform: translateX(-100%);
+      transition: transform 0.22s ease; box-shadow: 2px 0 24px rgba(0,0,0,0.5);
+      padding-top: calc(1.1rem + env(safe-area-inset-top));
+    }
+    .sidebar.open { transform: translateX(0); }
+    .drawer-close { display: flex; }
+    .drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem; }
+    .drawer-head-title { font-size: 0.85rem; font-weight: 700; color: var(--text-bright); }
   }
 
-  .otp-empty {
-    font-size: 0.85rem;
-    color: var(--text-dim);
-    padding: 1.4rem 0.5rem;
-    text-align: center;
-    border: 1px dashed var(--border);
-    border-radius: 8px;
+  @media (max-width: 640px) {
+    .card-body { grid-template-columns: 1fr; }
+    .card-otp-pane { flex-direction: row; justify-content: space-between; text-align: left; padding: 12px 14px; }
+    .card-otp-title { writing-mode: horizontal-tb; }
+    .topbar .sub { display: none; }
+    .card-actions { flex-wrap: nowrap; }
   }
-
-  .sms-box { margin-top: 0.85rem; }
-  .sms-box .k {
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    margin-bottom: 5px;
-    display: block;
-  }
-  .sms-text {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--text);
-    background: #0a0f16;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 11px;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-  .sms-text mark {
-    background: rgba(53,212,136,0.22);
-    color: #a8f5cb;
-    border-radius: 3px;
-    padding: 0 2px;
-    font-weight: 700;
-  }
-
-  .candidates {
-    margin-top: 0.65rem;
-    display: none;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
-  }
-  .candidates.show { display: flex; }
-  .candidates .hint {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    width: 100%;
-    margin-bottom: 2px;
-  }
-  .chip {
-    background: #1b222b;
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    padding: 5px 10px;
-    border-radius: 20px;
-    cursor: pointer;
-  }
-  .chip:hover { border-color: var(--accent); color: var(--text-bright); }
-  .chip.selected { background: var(--ok-dim); border-color: rgba(53,212,136,0.4); color: var(--ok); }
-
-  /* Activity log grid (API 1 / 2 / 3) */
-  .log-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-  }
-  @media (max-width: 820px) { .log-grid { grid-template-columns: 1fr; } }
-
-  .log-panel {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.95rem;
-    min-width: 0;
-  }
-  .log-box {
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    color: #8fe3b0;
-    word-break: break-all;
-    white-space: pre-wrap;
-    line-height: 1.5;
-  }
-  .log-box.dim { color: var(--text-dim); }
-  .log-box.err { color: #ff9aa4; }
-  .log-box.warn-text { color: var(--warn); }
-  .log-box.purple { color: #d7c6ff; }
 
   @media (prefers-reduced-motion: reduce) {
-    .spinner, .badge-polling::before { animation: none; }
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
 </style>
 </head>
@@ -544,186 +353,161 @@
   <!-- Top bar -->
   <div class="topbar">
     <div class="topbar-left">
+      <button type="button" class="hamburger" onclick="openDrawer()" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
       <div class="mark">OTP</div>
-      <div>
-        <h1>OTP Service Dashboard</h1>
-        <div class="sub">Live number &amp; verification-code monitor</div>
+      <div class="topbar-titles">
+        <h1>OTP Dashboard</h1>
+        <div class="sub">Dynamic Sessions &amp; History Persistence</div>
       </div>
     </div>
-    <div class="pipeline">
-      <span class="step">1 getNumber</span>
-      <span class="arrow">→</span>
-      <span class="step">2 getStatus</span>
-      <span class="arrow">→</span>
-      <span class="step">3 setStatus</span>
-    </div>
     <div class="balance-tag">
-      <span class="label">Balance</span>
+      <span>Balance:</span>
       <span class="val" id="balanceText">—</span>
     </div>
   </div>
 
-  <!-- Sidebar: config + controls -->
-  <div class="sidebar">
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+
+  <!-- Sidebar / Drawer -->
+  <div class="sidebar" id="sidebar">
+    <div class="drawer-head">
+      <span class="drawer-head-title">Menu</span>
+      <button type="button" class="drawer-close" onclick="closeDrawer()" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
 
     <div class="side-block">
       <div class="side-block-title">Credentials</div>
-      <div class="input-group" style="margin-bottom:0;">
+      <div class="input-group">
         <label for="apiKey">API Key</label>
         <div class="key-field">
-          <input type="password" id="apiKey" placeholder="Enter your API key" autocomplete="off">
+          <input type="password" id="apiKey" placeholder="Enter API key" autocomplete="off" oninput="handleKeyChange()">
           <button type="button" class="toggle-visibility" id="visToggle" onclick="toggleKeyVisibility()">SHOW</button>
         </div>
-        <button type="button" class="btn-balance" onclick="checkBalance()">
-          <span id="balanceSpinner" class="spinner dark"></span>
-          <span id="balanceBtnLabel">Check Balance</span>
-        </button>
+        <button type="button" class="btn-balance" onclick="checkBalance()">Check Balance</button>
       </div>
     </div>
 
     <div class="side-block">
-      <div class="side-block-title">Request Parameters</div>
+      <div class="side-block-title">New Request Parameters</div>
       <div class="grid-3">
-        <div class="input-group" style="margin-bottom:0;">
+        <div class="input-group">
           <label for="serviceInput">Service</label>
           <input type="text" id="serviceInput" value="qfp">
         </div>
-        <div class="input-group" style="margin-bottom:0;">
+        <div class="input-group">
           <label for="countryInput">Country</label>
           <input type="text" id="countryInput" value="22">
         </div>
-        <div class="input-group" style="margin-bottom:0;">
+        <div class="input-group">
           <label for="operatorInput">Operator</label>
           <input type="text" id="operatorInput" value="16">
         </div>
       </div>
-    </div>
-
-    <div class="side-block">
-      <div class="side-block-title">Controls</div>
       <button id="startBtn" class="btn-primary" onclick="startFlow()">
-        <span id="startSpinner" class="spinner"></span>
-        <span id="startBtnLabel">Get Number &amp; Start Polling</span>
+        <span id="startBtnLabel">+ Get New Number</span>
       </button>
-      <div class="btn-group" style="margin-top:8px;">
-        <button id="stopBtn" class="btn-stop" onclick="stopPolling()">Stop Polling</button>
-        <button id="cancelBtn" class="btn-cancel" onclick="setStatusAction(8)" disabled>Cancel Number</button>
-        <button id="newCodeBtn" class="btn-new-code" onclick="setStatusAction(3)" disabled>Request New Code</button>
-      </div>
     </div>
 
     <div class="side-block">
-      <div class="side-block-title">Balance API · getBalance</div>
-      <div id="balanceBox" class="log-box dim">Tap "Check Balance" to fetch your account balance.</div>
+      <div class="side-block-title">
+        <span>History &amp; Storage</span>
+      </div>
+      <button class="btn-secondary" onclick="exportHistoryJson()">📥 Export history as JSON</button>
+      <button class="btn-secondary" style="color:var(--danger);" onclick="clearCurrentHistory()">Clear key history</button>
     </div>
 
   </div>
 
-  <!-- Main content -->
+  <!-- Main Content -->
   <div class="main">
+    <div id="banner" class="banner"></div>
 
-    <div id="banner" class="banner">
-      <span>⚠️</span>
-      <span id="bannerText"></span>
-    </div>
-
-    <!-- KPI row -->
-    <div class="kpi-row">
-      <div class="kpi-card">
-        <span class="kpi-label">Poll Status <span id="pollBadge" class="badge badge-idle">Idle</span></span>
-        <span id="pollTimer" class="kpi-value" style="font-size:0.78rem; color:var(--text-dim);">Not polling</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Transaction ID</span>
-        <span id="idDisplay" class="kpi-value">—</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Phone Number
-          <button id="copyNumBtn" class="btn-copy" style="padding:2px 8px; font-size:0.62rem;" onclick="copyValue(activeNumber, 'copyNumIcon', 'copyNumLabel')" disabled>
-            <span id="copyNumIcon">⧉</span><span id="copyNumLabel">Copy</span>
-          </button>
-        </span>
-        <span id="numDisplay" class="kpi-value accent-ok">—</span>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-label">Account Balance</span>
-        <span class="kpi-value accent-purple" id="balanceTextEcho">—</span>
+    <div class="main-header">
+      <div class="side-block-title" style="margin-bottom:0;">
+        <span>Active &amp; historic numbers (<span id="sessionCount">0</span>)</span>
       </div>
     </div>
 
-    <!-- OTP result -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">API 2 · getStatus — Verification Code</span>
-      </div>
-
-      <div id="otpHero" class="otp-hero">
-        <div class="otp-hero-left">
-          <span class="k">Detected OTP <span id="otpConfidence" class="badge badge-ok badge-sm" style="margin-left:6px;"></span></span>
-          <span id="otpCode" class="code">------</span>
-        </div>
-        <button class="btn-copy" onclick="copyValue(selectedOtp, 'copyOtpIcon', 'copyOtpLabel')">
-          <span id="copyOtpIcon">⧉</span> <span id="copyOtpLabel">Copy code</span>
-        </button>
-      </div>
-
-      <div id="otpEmpty" class="otp-empty">No verification code yet — start a request to begin polling.</div>
-
-      <div id="candidatesRow" class="candidates">
-        <span class="hint">Other numbers found in the message — tap if the detected code looks wrong:</span>
-        <div id="candidatesChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-      </div>
-
-      <div id="smsBox" class="sms-box" style="display:none;">
-        <span class="k">Full message</span>
-        <div id="smsText" class="sms-text"></div>
+    <div id="cardsContainer" class="cards-grid">
+      <div class="empty-state">
+        <span class="emoji">🔑</span>
+        <strong>No numbers yet</strong>
+        Enter an API key in the menu, then request a new number to get started.
       </div>
     </div>
-
-    <!-- Activity logs -->
-    <div class="log-grid">
-      <div class="log-panel">
-        <div class="panel-header">
-          <span class="panel-title">API 1 · getNumber</span>
-        </div>
-        <div id="api1Box" class="log-box dim">Waiting to start…</div>
-      </div>
-      <div class="log-panel">
-        <div class="panel-header">
-          <span class="panel-title">API 2 · getStatus</span>
-        </div>
-        <div id="api2Box" class="log-box dim">Waiting for a transaction ID…</div>
-      </div>
-      <div class="log-panel">
-        <div class="panel-header">
-          <span class="panel-title">API 3 · setStatus</span>
-        </div>
-        <div id="actionBox" class="log-box dim">No action performed yet.</div>
-      </div>
-    </div>
-
   </div>
 
 </div>
 
-<script>
-  // Your Google Apps Script Web App URL:
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv4VJHauSrQ5tjdjrU4tZ_sfpx7-cvlOWSdpR5Jk-I7EpKk5HLQUVxboVTyMcnqeeR/exec";
+<div class="toast-stack" id="toastStack"></div>
 
-  let pollIntervalId = null;
-  let pollTickId = null;
-  let activeId = null;
-  let activeNumber = null;
-  let pollStartTime = null;
-  let selectedOtp = null;
+<script>
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv4VJHauSrQ5tjdjrU4tZ_sfpx7-cvlOWSdpR5Jk-I7EpKk5HLQUVxboVTyMcnqeeR/exec";
+  const CANCEL_LOCKOUT_SECONDS = 120;
+
+  let keyDebounceTimer = null;
+  let activePollers = {};
+  let currentKeyHistory = [];
+  let countdownTickerId = null;
+  let justArrivedIds = new Set();
+
+  /* ---------- Small utilities ---------- */
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function showToast(message, isOk) {
+    const stack = document.getElementById("toastStack");
+    const el = document.createElement("div");
+    el.className = "toast" + (isOk ? " ok" : "");
+    el.innerHTML = (isOk
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+      : "") + `<span>${escapeHtml(message)}</span>`;
+    stack.appendChild(el);
+    setTimeout(() => {
+      el.style.animation = "toastOut 0.2s ease forwards";
+      setTimeout(() => el.remove(), 200);
+    }, 2200);
+  }
+
+  async function copyToClipboard(text, label) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`${label} copied`, true);
+    } catch (err) {
+      showToast(`Couldn't copy ${label.toLowerCase()}`, false);
+    }
+  }
 
   function showBanner(msg) {
-    const banner = document.getElementById("banner");
-    document.getElementById("bannerText").innerHTML = msg;
-    banner.classList.add("show");
+    const b = document.getElementById("banner");
+    b.innerHTML = `<span>${msg}</span><button type="button" onclick="hideBanner()" aria-label="Dismiss">✕</button>`;
+    b.classList.add("show");
   }
   function hideBanner() {
     document.getElementById("banner").classList.remove("show");
+  }
+
+  /* ---------- Drawer (mobile sidebar) ---------- */
+  function openDrawer() {
+    document.getElementById("sidebar").classList.add("open");
+    document.getElementById("drawerBackdrop").classList.add("show");
+    document.body.style.overflow = "hidden";
+  }
+  function closeDrawer() {
+    document.getElementById("sidebar").classList.remove("open");
+    document.getElementById("drawerBackdrop").classList.remove("show");
+    document.body.style.overflow = "";
   }
 
   function toggleKeyVisibility() {
@@ -738,429 +522,432 @@
     }
   }
 
-  function setLogState(el, text, state) {
-    el.textContent = text;
-    el.classList.remove("dim", "err", "warn-text", "purple");
-    if (state) el.classList.add(state);
+  function handleKeyChange() {
+    clearTimeout(keyDebounceTimer);
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) {
+      loadHistoryForKey("");
+      document.getElementById("balanceText").textContent = "—";
+      return;
+    }
+    loadHistoryForKey(key);
+    keyDebounceTimer = setTimeout(() => {
+      checkBalance();
+    }, 600);
   }
 
-  function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function getStorageKey(key) {
+    return `otp_history_${encodeURIComponent(key)}`;
   }
 
-  // ---------------------------------------------------------------------
-  // Smart OTP extraction: given a full SMS/message body, find the digit
-  // sequence that is most likely the actual verification code, rather than
-  // a product/model number, order ID, or the sender's own phone number
-  // that happens to also live in the message.
-  // ---------------------------------------------------------------------
-  const OTP_KEYWORDS = ["otp", "one-time", "one time", "code", "pin", "password", "passcode", "verification", "verify", "confirm", "auth"];
-  const NON_OTP_KEYWORDS = ["model", "order", "ref", "reference", "item", "product", "invoice", "sku", "account no", "acct", "ticket", "case", "tracking", "serial"];
+  function loadHistoryForKey(key) {
+    Object.values(activePollers).forEach(clearInterval);
+    activePollers = {};
 
-  function extractOtpCandidates(rawText) {
-    const text = rawText;
-    const lower = text.toLowerCase();
-    // digit runs of 3-8, not glued to letters/digits on either side (so "AX2020" or "2020-8891" style
-    // model numbers embedded in longer alphanumeric tokens get excluded at the boundary check)
-    const re = /(?<![A-Za-z0-9])(\d{3,8})(?![A-Za-z0-9])/g;
-    const seen = new Map();
-    let m;
-    while ((m = re.exec(text)) !== null) {
-      const val = m[1];
-      const idx = m.index;
-      const windowStart = Math.max(0, idx - 25);
-      const windowEnd = Math.min(text.length, idx + val.length + 25);
-      const window = lower.slice(windowStart, windowEnd);
+    if (!key) {
+      currentKeyHistory = [];
+      renderCards();
+      return;
+    }
+    let data = null;
+    try {
+      data = localStorage.getItem(getStorageKey(key));
+    } catch (e) { /* storage unavailable */ }
+    currentKeyHistory = data ? JSON.parse(data) : [];
+    renderCards();
 
-      let score = 0;
-      if (OTP_KEYWORDS.some(k => window.includes(k))) score += 12;
-      if (NON_OTP_KEYWORDS.some(k => window.includes(k))) score -= 9;
-      if (val.length >= 4 && val.length <= 6) score += 3;
-      else if (val.length === 3) score += 0;
-      else score -= 2;
-      score -= idx * 0.01; // tiny tie-breaker toward earlier occurrences
-
-      if (!seen.has(val) || seen.get(val).score < score) {
-        seen.set(val, { value: val, score, index: idx });
+    currentKeyHistory.forEach(item => {
+      if (item.status === 'POLLING') {
+        startCardPolling(item.id, key);
       }
-    }
-    return Array.from(seen.values()).sort((a, b) => b.score - a.score);
+    });
+
+    startCountdownTicker();
   }
 
-  function renderOtpResult(rawMessage, isPlainCode) {
-    const otpHero = document.getElementById("otpHero");
-    const otpEmpty = document.getElementById("otpEmpty");
-    const otpCodeEl = document.getElementById("otpCode");
-    const confEl = document.getElementById("otpConfidence");
-    const smsBox = document.getElementById("smsBox");
-    const smsTextEl = document.getElementById("smsText");
-    const candidatesRow = document.getElementById("candidatesRow");
-    const candidatesChips = document.getElementById("candidatesChips");
+  function saveCurrentHistory() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) return;
+    try {
+      localStorage.setItem(getStorageKey(key), JSON.stringify(currentKeyHistory));
+    } catch (e) { /* storage unavailable */ }
+  }
 
-    if (isPlainCode) {
-      // Response was a clean "STATUS_OK:123456" with no extra message text
-      selectedOtp = rawMessage;
-      otpCodeEl.textContent = selectedOtp;
-      confEl.textContent = "direct";
-      confEl.className = "badge badge-ok badge-sm";
-      otpHero.classList.add("show");
-      otpEmpty.style.display = "none";
-      smsBox.style.display = "none";
-      candidatesRow.classList.remove("show");
+  function exportHistoryJson() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) {
+      showBanner("<strong>API key required.</strong> Enter your key first.");
       return;
     }
+    const filename = `${key.slice(0, 12)}_history.json`;
+    const blob = new Blob([JSON.stringify(currentKeyHistory, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("History exported", true);
+  }
 
-    const candidates = extractOtpCandidates(rawMessage);
-
-    // Show full message with the top candidate highlighted
-    smsBox.style.display = "block";
-    if (candidates.length > 0) {
-      const top = candidates[0];
-      const before = escapeHtml(rawMessage.slice(0, top.index));
-      const mid = escapeHtml(rawMessage.slice(top.index, top.index + top.value.length));
-      const after = escapeHtml(rawMessage.slice(top.index + top.value.length));
-      smsTextEl.innerHTML = `${before}<mark>${mid}</mark>${after}`;
-    } else {
-      smsTextEl.textContent = rawMessage;
-    }
-
-    if (candidates.length === 0) {
-      otpHero.classList.remove("show");
-      otpEmpty.style.display = "block";
-      candidatesRow.classList.remove("show");
-      selectedOtp = null;
-      return;
-    }
-
-    otpEmpty.style.display = "none";
-    selectedOtp = candidates[0].value;
-    otpCodeEl.textContent = selectedOtp;
-    const strong = candidates[0].score >= 10;
-    confEl.textContent = strong ? "high confidence" : "best guess";
-    confEl.className = strong ? "badge badge-ok badge-sm" : "badge badge-err badge-sm";
-    otpHero.classList.add("show");
-
-    // Other candidates as tappable chips, in case the top guess is wrong
-    if (candidates.length > 1) {
-      candidatesChips.innerHTML = "";
-      candidates.slice(0, 6).forEach(c => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "chip" + (c.value === selectedOtp ? " selected" : "");
-        chip.textContent = c.value;
-        chip.onclick = () => {
-          selectedOtp = c.value;
-          otpCodeEl.textContent = selectedOtp;
-          confEl.textContent = "manual pick";
-          confEl.className = "badge badge-idle badge-sm";
-          Array.from(candidatesChips.children).forEach(ch => ch.classList.remove("selected"));
-          chip.classList.add("selected");
-          // re-highlight in the message
-          const before = escapeHtml(rawMessage.slice(0, c.index));
-          const mid = escapeHtml(rawMessage.slice(c.index, c.index + c.value.length));
-          const after = escapeHtml(rawMessage.slice(c.index + c.value.length));
-          smsTextEl.innerHTML = `${before}<mark>${mid}</mark>${after}`;
-        };
-        candidatesChips.appendChild(chip);
-      });
-      candidatesRow.classList.add("show");
-    } else {
-      candidatesRow.classList.remove("show");
+  function clearCurrentHistory() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) return;
+    if (confirm("Clear local history for this API key? This can't be undone.")) {
+      Object.values(activePollers).forEach(clearInterval);
+      activePollers = {};
+      currentKeyHistory = [];
+      saveCurrentHistory();
+      renderCards();
+      showToast("History cleared", true);
     }
   }
 
-  function resetOtpDisplay() {
-    document.getElementById("otpHero").classList.remove("show");
-    document.getElementById("otpEmpty").style.display = "block";
-    document.getElementById("candidatesRow").classList.remove("show");
-    document.getElementById("smsBox").style.display = "none";
-    selectedOtp = null;
-  }
-
-  // Check Balance API Call
   async function checkBalance() {
     const apiKey = document.getElementById("apiKey").value.trim();
-    const balanceBox = document.getElementById("balanceBox");
     const balanceText = document.getElementById("balanceText");
-    const balanceTextEcho = document.getElementById("balanceTextEcho");
-    const balanceBtnLabel = document.getElementById("balanceBtnLabel");
-    const balanceSpinner = document.getElementById("balanceSpinner");
-
     hideBanner();
 
-    if (!apiKey) {
-      showBanner("<strong>API key required.</strong> Enter your API key before checking balance.");
-      return;
-    }
-
-    balanceSpinner.classList.add("show");
-    balanceBtnLabel.textContent = "Checking…";
-    setLogState(balanceBox, "Fetching balance…", "dim");
+    if (!apiKey) return;
+    balanceText.textContent = "…";
 
     try {
       const url = `${GOOGLE_SCRIPT_URL}?action=getBalance&api_key=${encodeURIComponent(apiKey)}`;
       const res = await fetch(url);
       const text = await res.text();
-
-      const now = new Date().toLocaleTimeString();
-      const isOk = text.includes("ACCESS_BALANCE");
-      setLogState(balanceBox, `[${now}] ${text}`, isOk ? "purple" : "err");
-
-      if (isOk) {
-        const parts = text.split(":");
-        const val = parts[1] ? parts[1].trim() : text;
+      if (text.includes("ACCESS_BALANCE")) {
+        const val = text.split(":")[1]?.trim() || text;
         balanceText.textContent = val;
-        balanceTextEcho.textContent = val;
       } else {
         balanceText.textContent = "Error";
-        balanceTextEcho.textContent = "Error";
-        showBanner(`<strong>Couldn't fetch balance.</strong> ${text}`);
       }
     } catch (err) {
-      setLogState(balanceBox, `Error: ${err.message}`, "err");
       balanceText.textContent = "Error";
-      balanceTextEcho.textContent = "Error";
-    } finally {
-      balanceSpinner.classList.remove("show");
-      balanceBtnLabel.textContent = "Check Balance";
     }
+  }
+
+  function extractOtpCode(rawText) {
+    if (!rawText) return null;
+    const clean = rawText.replace(/^STATUS_OK:?/, "").trim();
+    if (/^\d+$/.test(clean)) return clean;
+
+    const re = /(?<![A-Za-z0-9])(\d{4,8})(?![A-Za-z0-9])/g;
+    let m = re.exec(rawText);
+    return m ? m[1] : null;
+  }
+
+  function getRemainingCancelSeconds(createdAtStr) {
+    if (!createdAtStr) return 0;
+    const elapsed = Math.floor((Date.now() - new Date(createdAtStr).getTime()) / 1000);
+    return Math.max(0, CANCEL_LOCKOUT_SECONDS - elapsed);
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+
+  function startCountdownTicker() {
+    if (countdownTickerId) clearInterval(countdownTickerId);
+    countdownTickerId = setInterval(() => {
+      currentKeyHistory.forEach(item => {
+        const remaining = getRemainingCancelSeconds(item.createdAt);
+        const btn = document.getElementById(`cancel-btn-${item.id}`);
+        if (btn) {
+          if (remaining > 0) {
+            btn.disabled = true;
+            btn.textContent = `Cancel (${formatTime(remaining)})`;
+          } else {
+            if (btn.disabled) {
+              btn.disabled = false;
+              btn.textContent = "Cancel number";
+            }
+          }
+        }
+      });
+    }, 1000);
   }
 
   async function startFlow() {
     const apiKey = document.getElementById("apiKey").value.trim();
-    const service = document.getElementById("serviceInput").value.trim() || 'wa';
+    const service = document.getElementById("serviceInput").value.trim() || 'qfp';
     const country = document.getElementById("countryInput").value.trim() || '22';
-    const operator = document.getElementById("operatorInput").value.trim() || 'any';
-
-    const api1Box = document.getElementById("api1Box");
-    const idDisplay = document.getElementById("idDisplay");
-    const numDisplay = document.getElementById("numDisplay");
-    const api2Box = document.getElementById("api2Box");
-    const actionBox = document.getElementById("actionBox");
+    const operator = document.getElementById("operatorInput").value.trim() || '16';
     const startBtn = document.getElementById("startBtn");
     const startBtnLabel = document.getElementById("startBtnLabel");
-    const startSpinner = document.getElementById("startSpinner");
-    const stopBtn = document.getElementById("stopBtn");
-    const copyBtn = document.getElementById("copyNumBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const newCodeBtn = document.getElementById("newCodeBtn");
 
     hideBanner();
-
     if (!apiKey) {
-      showBanner("<strong>API key required.</strong> Enter your API key before starting.");
+      showBanner("<strong>API key required.</strong> Enter your key before proceeding.");
+      openDrawer();
       return;
     }
-
-    // Reset previous UI state
-    stopPolling();
-    setLogState(api1Box, "Fetching getNumber…", "dim");
-    idDisplay.textContent = "—";
-    numDisplay.textContent = "—";
-    setLogState(api2Box, "Waiting…", "dim");
-    setLogState(actionBox, "No action performed yet.", "dim");
-    resetOtpDisplay();
-    copyBtn.disabled = true;
-    document.getElementById("copyNumLabel").textContent = "Copy";
-    cancelBtn.disabled = true;
-    newCodeBtn.disabled = true;
 
     startBtn.disabled = true;
-    startSpinner.classList.add("show");
-    startBtnLabel.textContent = "Requesting number…";
-
+    startBtnLabel.textContent = "Requesting…";
     try {
       const url = `${GOOGLE_SCRIPT_URL}?action=getNumber&api_key=${encodeURIComponent(apiKey)}&service=${encodeURIComponent(service)}&country=${encodeURIComponent(country)}&operator=${encodeURIComponent(operator)}`;
-      const res1 = await fetch(url);
-      const text1 = await res1.text();
-      setLogState(api1Box, text1, "");
+      const res = await fetch(url);
+      const text = await res.text();
 
-      if (!text1.includes("ACCESS_NUMBER")) {
-        throw new Error(text1 || "Unrecognized response from API 1.");
+      if (!text.includes("ACCESS_NUMBER")) {
+        throw new Error(text || "Provider error on getNumber");
       }
 
-      const parts = text1.split(":");
-      const extractedId = parts[1] ? parts[1].trim() : null;
-      const extractedNumber = parts[2] ? parts[2].trim() : null;
+      const parts = text.split(":");
+      const txId = parts[1]?.trim();
+      const phoneNum = parts[2]?.trim();
 
-      if (!extractedId) {
-        throw new Error("Could not extract a transaction ID from the response.");
-      }
+      const newItem = {
+        id: txId,
+        phone: phoneNum,
+        service,
+        country,
+        status: "POLLING",
+        otp: null,
+        lastRawResponse: text,
+        createdAt: new Date().toISOString()
+      };
 
-      activeId = extractedId;
-      idDisplay.textContent = activeId;
+      currentKeyHistory.unshift(newItem);
+      saveCurrentHistory();
+      renderCards();
+      startCountdownTicker();
 
-      if (extractedNumber) {
-        activeNumber = extractedNumber;
-        numDisplay.textContent = activeNumber;
-        copyBtn.disabled = false;
-      }
-
-      cancelBtn.disabled = false;
-      newCodeBtn.disabled = false;
-
-      stopBtn.style.display = "block";
-      updatePollBadge(true);
-      pollStartTime = Date.now();
-      startPollTimer();
-
-      fetchStatus(apiKey);
-      pollIntervalId = setInterval(() => {
-        if (activeId) {
-          fetchStatus(apiKey);
-        } else {
-          stopPolling();
-        }
-      }, 5000);
-
+      startCardPolling(txId, apiKey);
+      checkBalance();
+      showToast("New number requested", true);
+      closeDrawer();
     } catch (err) {
-      setLogState(api1Box, `Error: ${err.message}`, "err");
-      showBanner(`<strong>Couldn't get a number.</strong> ${err.message}`);
-      stopPolling();
+      showBanner(`<strong>Failed to get number:</strong> ${escapeHtml(err.message)}`);
     } finally {
       startBtn.disabled = false;
-      startSpinner.classList.remove("show");
-      startBtnLabel.textContent = "Get Number & Start Polling";
+      startBtnLabel.textContent = "+ Get New Number";
     }
   }
 
-  // API 2: getStatus Polling Function
-  async function fetchStatus(apiKey) {
-    if (!activeId) return;
+  function startCardPolling(id, apiKey) {
+    if (activePollers[id]) clearInterval(activePollers[id]);
 
-    const api2Box = document.getElementById("api2Box");
-    const now = new Date().toLocaleTimeString();
+    const pollTask = async () => {
+      try {
+        const url = `${GOOGLE_SCRIPT_URL}?action=getStatus&api_key=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`;
+        const res = await fetch(url);
+        const text = await res.text();
 
-    try {
-      const url = `${GOOGLE_SCRIPT_URL}?action=getStatus&api_key=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(activeId)}`;
-      const res = await fetch(url);
-      const text = await res.text();
-
-      let state = "dim";
-      if (text.startsWith("STATUS_OK")) state = "";
-      else if (text.startsWith("STATUS_WAIT_CODE")) state = "warn-text";
-      else if (text.includes("CANCEL") || text.includes("ERROR")) state = "err";
-
-      setLogState(api2Box, `[${now}] ${text}`, state);
-
-      if (text.startsWith("STATUS_OK")) {
-        // Response is typically "STATUS_OK:<code>" but some providers echo the
-        // full SMS body too, e.g. "STATUS_OK:363554:Your OTP is 363554 for
-        // Telegram, do not share. Model AX2020-8891." Work out which case we're in.
-        const rest = text.slice("STATUS_OK:".length).replace(/^:/, "").trim();
-        // Actually handle both "STATUS_OK:code" and "STATUS_OK code" style separators safely:
-        const afterPrefix = text.replace(/^STATUS_OK:?/, "").trim();
-
-        if (/^\d+$/.test(afterPrefix)) {
-          // Clean, code-only response — nothing else to parse
-          renderOtpResult(afterPrefix, true);
-        } else if (afterPrefix.length > 0) {
-          // Contains extra text — could be "code:full message" or just the full message.
-          // Strip a leading "digits:" if present so we don't double-count it, then run
-          // extraction across the remaining text (or the whole thing if no such prefix).
-          const leadingCodeMatch = afterPrefix.match(/^(\d{3,8}):(.*)$/s);
-          const messageForExtraction = leadingCodeMatch ? `${leadingCodeMatch[1]} ${leadingCodeMatch[2]}` : afterPrefix;
-          renderOtpResult(messageForExtraction, false);
+        // If cancelled on provider side: stop polling, purge history, and refresh balance
+        if (text.includes("ACCESS_CANCEL")) {
+          if (activePollers[id]) {
+            clearInterval(activePollers[id]);
+            delete activePollers[id];
+          }
+          currentKeyHistory = currentKeyHistory.filter(x => x.id !== id);
+          saveCurrentHistory();
+          renderCards();
+          checkBalance();
+          return;
         }
-        updatePollBadge(false, "ok");
-        stopPolling();
+
+        const item = currentKeyHistory.find(x => x.id === id);
+        if (!item) {
+          clearInterval(activePollers[id]);
+          return;
+        }
+
+        item.lastRawResponse = `[${new Date().toLocaleTimeString()}] ${text}`;
+
+        if (text.startsWith("STATUS_OK")) {
+          const wasSuccess = item.status === "SUCCESS";
+          item.status = "SUCCESS";
+          item.otp = extractOtpCode(text);
+          if (!wasSuccess) {
+            justArrivedIds.add(id);
+            showToast(`Code received for ${item.phone}`, true);
+            if (activePollers[id]) {
+              clearInterval(activePollers[id]);
+              delete activePollers[id];
+            }
+          }
+        } else {
+          item.status = "POLLING";
+        }
+
+        saveCurrentHistory();
+        updateCardUI(item);
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      setLogState(api2Box, `[${now}] Polling error: ${err.message}`, "err");
-    }
+    };
+
+    pollTask();
+    activePollers[id] = setInterval(pollTask, 5000);
   }
 
-  // API 3: setStatus Function (status 8 = Cancel, status 3 = Request new code)
-  async function setStatusAction(statusNumber) {
+  async function performAction(id, statusVal) {
     const apiKey = document.getElementById("apiKey").value.trim();
-    const actionBox = document.getElementById("actionBox");
+    if (!apiKey || !id) return;
 
-    if (!apiKey || !activeId) {
-      showBanner("Missing an active transaction ID or API key.");
-      return;
+    const item = currentKeyHistory.find(x => x.id === id);
+    if (!item) return;
+
+    if (statusVal === 8) {
+      const rem = getRemainingCancelSeconds(item.createdAt);
+      if (rem > 0) {
+        showBanner(`Please wait ${formatTime(rem)} before cancelling this number.`);
+        return;
+      }
     }
-    hideBanner();
 
-    const actionText = statusNumber === 8 ? "Cancelling number…" : "Requesting new code…";
-    setLogState(actionBox, actionText, "dim");
+    const actionText = statusVal === 8 ? "Cancelling..." : "Requesting code...";
+    item.lastRawResponse = `[${new Date().toLocaleTimeString()}] ${actionText}`;
+    updateCardUI(item);
 
     try {
-      const url = `${GOOGLE_SCRIPT_URL}?action=setStatus&api_key=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(activeId)}&status=${statusNumber}`;
+      const url = `${GOOGLE_SCRIPT_URL}?action=setStatus&api_key=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}&status=${statusVal}`;
       const res = await fetch(url);
       const text = await res.text();
+
+      // If ACCESS_CANCEL is confirmed: purge card from state, save, and hit checkBalance
+      if (text.includes("ACCESS_CANCEL")) {
+        if (activePollers[id]) {
+          clearInterval(activePollers[id]);
+          delete activePollers[id];
+        }
+        currentKeyHistory = currentKeyHistory.filter(x => x.id !== id);
+        saveCurrentHistory();
+        renderCards();
+        checkBalance();
+        showToast("Number cancelled", true);
+        return;
+      }
 
       const now = new Date().toLocaleTimeString();
-      setLogState(actionBox, `[${now}] (status=${statusNumber}) ${text}`, "");
+      item.lastRawResponse = `[${now}] Action(${statusVal}): ${text}`;
 
-      if (statusNumber === 8) {
-        updatePollBadge(false);
-        stopPolling();
-      } else if (statusNumber === 3) {
-        // Requesting a new code invalidates the previous one
-        resetOtpDisplay();
+      if (statusVal === 3) {
+        item.otp = null;
+        item.status = "POLLING";
+        startCardPolling(id, apiKey);
+        showToast("Requested a new code", true);
       }
+
+      saveCurrentHistory();
+      updateCardUI(item);
     } catch (err) {
-      setLogState(actionBox, `Action failed: ${err.message}`, "err");
+      showBanner(`Action failed: ${escapeHtml(err.message)}`);
+      item.lastRawResponse = `[${new Date().toLocaleTimeString()}] Error: ${err.message}`;
+      updateCardUI(item);
     }
   }
 
-  // Generic clipboard copy for both the phone number and the detected OTP
-  async function copyValue(value, iconId, labelId) {
-    if (!value) return;
-    const iconEl = document.getElementById(iconId);
-    const labelEl = document.getElementById(labelId);
-    try {
-      await navigator.clipboard.writeText(value);
-      iconEl.textContent = "✓";
-      labelEl.textContent = "Copied";
-      setTimeout(() => {
-        iconEl.textContent = "⧉";
-        labelEl.textContent = labelId === "copyOtpLabel" ? "Copy code" : "Copy";
-      }, 1800);
-    } catch (err) {
-      showBanner("Couldn't access the clipboard. Copy the value manually.");
+  function renderCards() {
+    const container = document.getElementById("cardsContainer");
+    document.getElementById("sessionCount").textContent = currentKeyHistory.length;
+
+    if (currentKeyHistory.length === 0) {
+      const apiKey = document.getElementById("apiKey").value.trim();
+      container.innerHTML = apiKey
+        ? `<div class="empty-state"><span class="emoji">📭</span><strong>No numbers yet</strong>Request a new number from the menu to see it appear here.</div>`
+        : `<div class="empty-state"><span class="emoji">🔑</span><strong>No numbers yet</strong>Enter an API key in the menu, then request a new number to get started.</div>`;
+      return;
     }
+
+    container.innerHTML = currentKeyHistory.map(item => generateCardHtml(item)).join("");
   }
 
-  function startPollTimer() {
-    const timerEl = document.getElementById("pollTimer");
-    pollTickId = setInterval(() => {
-      const secs = Math.floor((Date.now() - pollStartTime) / 1000);
-      timerEl.textContent = `Polling ${secs}s · next in ${5 - (secs % 5)}s`;
-    }, 1000);
-  }
-
-  // Stop polling interval and reset buttons
-  function stopPolling() {
-    if (pollIntervalId) {
-      clearInterval(pollIntervalId);
-      pollIntervalId = null;
-    }
-    if (pollTickId) {
-      clearInterval(pollTickId);
-      pollTickId = null;
-    }
-    document.getElementById("pollTimer").textContent = "Not polling";
-    document.getElementById("stopBtn").style.display = "none";
-    if (document.getElementById("pollBadge").classList.contains("badge-polling")) {
-      updatePollBadge(false);
-    }
-  }
-
-  function updatePollBadge(isPolling, forcedState) {
-    const badge = document.getElementById("pollBadge");
-    badge.className = "badge";
-    if (forcedState === "ok") {
-      badge.classList.add("badge-ok");
-      badge.textContent = "Code received";
-    } else if (isPolling) {
-      badge.classList.add("badge-polling");
-      badge.textContent = "Polling every 5s";
+  function updateCardUI(item) {
+    const el = document.getElementById(`card-${item.id}`);
+    if (el) {
+      const wasOpen = el.querySelector("details.log-details")?.open;
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = generateCardHtml(item);
+      const newEl = tempDiv.firstElementChild;
+      if (wasOpen) {
+        const d = newEl.querySelector("details.log-details");
+        if (d) d.open = true;
+      }
+      el.replaceWith(newEl);
     } else {
-      badge.classList.add("badge-idle");
-      badge.textContent = "Idle";
+      renderCards();
     }
   }
+
+  function generateCardHtml(item) {
+    let badgeClass = "badge-wait";
+    let badgeText = item.status;
+
+    if (item.status === "POLLING") {
+      badgeClass = "badge-polling";
+      badgeText = "Polling 5s";
+    } else if (item.status === "SUCCESS") {
+      badgeClass = "badge-ok";
+      badgeText = "Received";
+    }
+
+    const remSeconds = getRemainingCancelSeconds(item.createdAt);
+    const isCancelDisabled = remSeconds > 0;
+    const cancelLabel = isCancelDisabled ? `Cancel (${formatTime(remSeconds)})` : 'Cancel number';
+
+    const safePhone = escapeHtml(item.phone || "—");
+    const safeId = escapeHtml(item.id || "");
+    const safeOtp = item.otp ? escapeHtml(item.otp) : "";
+    const safeLog = escapeHtml(item.lastRawResponse || "No response received yet.");
+
+    const isNewArrival = item.otp && justArrivedIds.has(item.id);
+    if (isNewArrival) justArrivedIds.delete(item.id);
+
+    const otpDisplay = item.otp
+      ? `<div class="card-otp-val${isNewArrival ? ' reveal' : ''}">${safeOtp}</div>
+         <div class="otp-copy-row">
+           <button type="button" class="icon-btn" title="Copy code" aria-label="Copy code" onclick="copyToClipboard('${safeOtp}', 'Code')">
+             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+           </button>
+         </div>`
+      : `<div class="card-otp-val pending">Waiting…</div>`;
+
+    return `
+      <div class="item-card ${item.status === 'SUCCESS' ? 'completed' : ''}" id="card-${item.id}">
+        <div class="card-top">
+          <div class="card-top-left">
+            <span class="card-phone">${safePhone}</span>
+            <button type="button" class="icon-btn" title="Copy number" aria-label="Copy number" onclick="copyToClipboard('${safePhone}', 'Number')">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <span class="badge ${badgeClass}"><span class="badge-dot"></span>${badgeText}</span>
+          </div>
+          <div class="card-tx">TX ${safeId}</div>
+        </div>
+
+        <div class="card-body">
+          <div class="card-otp-pane${item.status === 'SUCCESS' ? ' success' : ''}">
+            <div class="card-otp-title">OTP code</div>
+            ${otpDisplay}
+          </div>
+
+          <div class="card-log-pane">
+            <div class="card-actions">
+              <button id="cancel-btn-${safeId}" class="btn-cancel" onclick="performAction('${safeId}', 8)" ${isCancelDisabled ? 'disabled' : ''}>${cancelLabel}</button>
+              <button class="btn-new-code" onclick="performAction('${safeId}', 3)">Request new code</button>
+            </div>
+            <details class="log-details">
+              <summary>
+                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                Live API response
+              </summary>
+              <div class="raw-response">${safeLog}</div>
+            </details>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+  });
+
+  startCountdownTicker();
 </script>
 
 </body>
