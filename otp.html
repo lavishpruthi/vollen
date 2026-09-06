@@ -102,8 +102,13 @@
     font-size: 0.78rem; font-family: var(--mono); color: var(--purple);
     display: flex; align-items: center; gap: 6px;
     flex: none;
+    cursor: pointer;
+    min-height: 36px;
   }
+  .balance-tag:hover { filter: brightness(1.15); }
+  .balance-tag:disabled, .balance-tag.disabled { cursor: default; filter: none; opacity: 0.7; }
   .balance-tag .val { color: #d7c6ff; font-weight: 700; }
+  .balance-tag svg { width: 13px; height: 13px; stroke: var(--purple); flex: none; }
 
   /* ---------- Sidebar / Drawer ---------- */
   .drawer-backdrop {
@@ -140,6 +145,9 @@
   .input-group { margin-bottom: 0.8rem; }
   .input-group:last-child { margin-bottom: 0; }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .helper-text {
+    font-size: 0.68rem; color: var(--text-dim); margin-top: 6px; line-height: 1.4;
+  }
 
   input[type="text"], input[type="password"] {
     width: 100%; padding: 11px; min-height: var(--tap);
@@ -148,6 +156,7 @@
     font-family: var(--mono); font-size: 0.9rem;
   }
   input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(63,177,255,0.15); }
+  input.field-error { border-color: var(--danger); }
 
   .key-field { position: relative; display: flex; align-items: center; }
   .key-field input { padding-right: 48px; }
@@ -165,7 +174,7 @@
   button:hover:not(:disabled) { filter: brightness(1.12); }
   button:active:not(:disabled) { transform: scale(0.98); }
   button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(0.6); }
-  button:focus-visible, input:focus-visible, .icon-btn:focus-visible {
+  button:focus-visible, input:focus-visible, .icon-btn:focus-visible, .balance-tag:focus-visible {
     outline: 2px solid var(--accent); outline-offset: 2px;
   }
 
@@ -195,7 +204,7 @@
     width: var(--tap); height: var(--tap); flex: none; padding: 0;
     display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm);
   }
-  .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+  .icon-btn svg { width: 16px; height: 16px; stroke: currentColor; pointer-events: none; }
   .icon-btn.copied { color: var(--ok); border-color: rgba(53,212,136,0.4); }
 
   .drawer-close {
@@ -243,8 +252,10 @@
   }
   .card-top-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
   .card-phone { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; color: var(--text-bright); letter-spacing: 0.01em; }
+  .card-phone .cc { color: var(--text-dim); font-weight: 600; }
   .card-meta { display: flex; align-items: center; gap: 8px; }
-  .card-tx { font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim); }
+  .card-tx { font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim); text-align: right; }
+  .card-created { display: block; font-size: 0.65rem; color: var(--text-dim); opacity: 0.8; margin-top: 2px; }
 
   .badge {
     font-size: 0.62rem; padding: 3px 9px; border-radius: 20px; font-weight: 700;
@@ -300,6 +311,7 @@
   }
   .empty-state .emoji { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; }
   .empty-state strong { color: var(--text); display: block; margin-bottom: 4px; font-size: 0.9rem; }
+  .empty-state .btn-primary { max-width: 240px; margin: 1rem auto 0; }
 
   /* ---------- Toasts ---------- */
   .toast-stack {
@@ -313,9 +325,17 @@
     display: flex; align-items: center; gap: 8px; animation: toastIn 0.2s ease;
   }
   .toast.ok { border-color: rgba(53,212,136,0.4); }
-  .toast svg { width: 14px; height: 14px; stroke: var(--ok); flex: none; }
+  .toast.err { border-color: rgba(255,93,108,0.4); }
+  .toast svg { width: 14px; height: 14px; flex: none; }
+  .toast.ok svg { stroke: var(--ok); }
+  .toast.err svg { stroke: var(--danger); }
   @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes toastOut { to { opacity: 0; transform: translateY(8px); } }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
 
   /* ---------- Mobile ---------- */
   @media (max-width: 900px) {
@@ -339,6 +359,7 @@
     .card-otp-title { writing-mode: horizontal-tb; }
     .topbar .sub { display: none; }
     .card-actions { flex-wrap: nowrap; }
+    .card-tx { text-align: left; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -362,10 +383,11 @@
         <div class="sub">Dynamic Sessions &amp; History Persistence</div>
       </div>
     </div>
-    <div class="balance-tag">
+    <button type="button" class="balance-tag" id="balanceTag" onclick="checkBalance()" title="Click to refresh balance">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
       <span>Balance:</span>
       <span class="val" id="balanceText">—</span>
-    </div>
+    </button>
   </div>
 
   <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
@@ -375,7 +397,7 @@
     <div class="drawer-head">
       <span class="drawer-head-title">Menu</span>
       <button type="button" class="drawer-close" onclick="closeDrawer()" aria-label="Close menu">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
 
@@ -384,9 +406,10 @@
       <div class="input-group">
         <label for="apiKey">API Key</label>
         <div class="key-field">
-          <input type="password" id="apiKey" placeholder="Enter API key" autocomplete="off" oninput="handleKeyChange()">
+          <input type="password" id="apiKey" placeholder="Enter API key" autocomplete="off" oninput="handleKeyChange()" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkBalance();}">
           <button type="button" class="toggle-visibility" id="visToggle" onclick="toggleKeyVisibility()">SHOW</button>
         </div>
+        <div class="helper-text">Stored only in this browser, per key. Never sent anywhere except the provider API.</div>
         <button type="button" class="btn-balance" onclick="checkBalance()">Check Balance</button>
       </div>
     </div>
@@ -396,18 +419,18 @@
       <div class="grid-3">
         <div class="input-group">
           <label for="serviceInput">Service</label>
-          <input type="text" id="serviceInput" value="qfp">
+          <input type="text" id="serviceInput" value="qfp" onkeydown="if(event.key==='Enter'){event.preventDefault(); startFlow();}">
         </div>
         <div class="input-group">
           <label for="countryInput">Country</label>
-          <input type="text" id="countryInput" value="22">
+          <input type="text" id="countryInput" value="22" onkeydown="if(event.key==='Enter'){event.preventDefault(); startFlow();}">
         </div>
         <div class="input-group">
           <label for="operatorInput">Operator</label>
-          <input type="text" id="operatorInput" value="16">
+          <input type="text" id="operatorInput" value="16" onkeydown="if(event.key==='Enter'){event.preventDefault(); startFlow();}">
         </div>
       </div>
-      <button id="startBtn" class="btn-primary" onclick="startFlow()">
+      <button id="startBtn" class="btn-primary" onclick="startFlow()" disabled>
         <span id="startBtnLabel">+ Get New Number</span>
       </button>
     </div>
@@ -424,7 +447,7 @@
 
   <!-- Main Content -->
   <div class="main">
-    <div id="banner" class="banner"></div>
+    <div id="banner" class="banner" role="alert" aria-live="assertive"></div>
 
     <div class="main-header">
       <div class="side-block-title" style="margin-bottom:0;">
@@ -437,13 +460,14 @@
         <span class="emoji">🔑</span>
         <strong>No numbers yet</strong>
         Enter an API key in the menu, then request a new number to get started.
+        <button type="button" class="btn-primary" onclick="focusApiKey()">Enter API key</button>
       </div>
     </div>
   </div>
 
 </div>
 
-<div class="toast-stack" id="toastStack"></div>
+<div class="toast-stack" id="toastStack" role="status" aria-live="polite"></div>
 
 <script>
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzv4VJHauSrQ5tjdjrU4tZ_sfpx7-cvlOWSdpR5Jk-I7EpKk5HLQUVxboVTyMcnqeeR/exec";
@@ -466,13 +490,26 @@
       .replace(/'/g, "&#39;");
   }
 
+  // Phone numbers are stored as "<countrycode>-<localnumber>" (e.g. "91-9090").
+  // Everything the user actually dials/uses locally is after the first dash.
+  function getLocalNumber(phone) {
+    if (!phone) return phone || "";
+    const idx = phone.indexOf("-");
+    return idx >= 0 ? phone.slice(idx + 1) : phone;
+  }
+  function getCountryCode(phone) {
+    if (!phone) return "";
+    const idx = phone.indexOf("-");
+    return idx >= 0 ? phone.slice(0, idx) : "";
+  }
+
   function showToast(message, isOk) {
     const stack = document.getElementById("toastStack");
     const el = document.createElement("div");
-    el.className = "toast" + (isOk ? " ok" : "");
+    el.className = "toast" + (isOk ? " ok" : " err");
     el.innerHTML = (isOk
       ? '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
-      : "") + `<span>${escapeHtml(message)}</span>`;
+      : '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>') + `<span>${escapeHtml(message)}</span>`;
     stack.appendChild(el);
     setTimeout(() => {
       el.style.animation = "toastOut 0.2s ease forwards";
@@ -480,10 +517,19 @@
     }, 2200);
   }
 
-  async function copyToClipboard(text, label) {
+  async function copyToClipboard(text, label, btnEl) {
     try {
       await navigator.clipboard.writeText(text);
       showToast(`${label} copied`, true);
+      if (btnEl) {
+        const original = btnEl.innerHTML;
+        btnEl.classList.add("copied");
+        btnEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+        setTimeout(() => {
+          btnEl.classList.remove("copied");
+          btnEl.innerHTML = original;
+        }, 1200);
+      }
     } catch (err) {
       showToast(`Couldn't copy ${label.toLowerCase()}`, false);
     }
@@ -510,6 +556,12 @@
     document.body.style.overflow = "";
   }
 
+  function focusApiKey() {
+    if (window.matchMedia("(max-width: 900px)").matches) openDrawer();
+    const el = document.getElementById("apiKey");
+    el.focus();
+  }
+
   function toggleKeyVisibility() {
     const input = document.getElementById("apiKey");
     const btn = document.getElementById("visToggle");
@@ -522,9 +574,16 @@
     }
   }
 
+  function updateStartBtnState() {
+    const key = document.getElementById("apiKey").value.trim();
+    const startBtn = document.getElementById("startBtn");
+    startBtn.disabled = !key;
+  }
+
   function handleKeyChange() {
     clearTimeout(keyDebounceTimer);
     const key = document.getElementById("apiKey").value.trim();
+    updateStartBtnState();
     if (!key) {
       loadHistoryForKey("");
       document.getElementById("balanceText").textContent = "—";
@@ -577,6 +636,11 @@
     const key = document.getElementById("apiKey").value.trim();
     if (!key) {
       showBanner("<strong>API key required.</strong> Enter your key first.");
+      openDrawer();
+      return;
+    }
+    if (!currentKeyHistory.length) {
+      showToast("No history to export", false);
       return;
     }
     const filename = `${key.slice(0, 12)}_history.json`;
@@ -592,7 +656,10 @@
 
   function clearCurrentHistory() {
     const key = document.getElementById("apiKey").value.trim();
-    if (!key) return;
+    if (!key) {
+      showToast("Enter an API key first", false);
+      return;
+    }
     if (confirm("Clear local history for this API key? This can't be undone.")) {
       Object.values(activePollers).forEach(clearInterval);
       activePollers = {};
@@ -608,7 +675,11 @@
     const balanceText = document.getElementById("balanceText");
     hideBanner();
 
-    if (!apiKey) return;
+    if (!apiKey) {
+      showBanner("<strong>API key required.</strong> Enter your key to check balance.");
+      focusApiKey();
+      return;
+    }
     balanceText.textContent = "…";
 
     try {
@@ -648,6 +719,15 @@
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
 
+  function formatCreatedAt(createdAtStr) {
+    if (!createdAtStr) return "";
+    try {
+      return new Date(createdAtStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return "";
+    }
+  }
+
   function startCountdownTicker() {
     if (countdownTickerId) clearInterval(countdownTickerId);
     countdownTickerId = setInterval(() => {
@@ -680,7 +760,7 @@
     hideBanner();
     if (!apiKey) {
       showBanner("<strong>API key required.</strong> Enter your key before proceeding.");
-      openDrawer();
+      focusApiKey();
       return;
     }
 
@@ -722,7 +802,7 @@
     } catch (err) {
       showBanner(`<strong>Failed to get number:</strong> ${escapeHtml(err.message)}`);
     } finally {
-      startBtn.disabled = false;
+      updateStartBtnState();
       startBtnLabel.textContent = "+ Get New Number";
     }
   }
@@ -763,7 +843,7 @@
           item.otp = extractOtpCode(text);
           if (!wasSuccess) {
             justArrivedIds.add(id);
-            showToast(`Code received for ${item.phone}`, true);
+            showToast(`Code received for ${getLocalNumber(item.phone)}`, true);
             if (activePollers[id]) {
               clearInterval(activePollers[id]);
               delete activePollers[id];
@@ -797,6 +877,7 @@
         showBanner(`Please wait ${formatTime(rem)} before cancelling this number.`);
         return;
       }
+      if (!confirm(`Cancel number ${getLocalNumber(item.phone)}? This can't be undone.`)) return;
     }
 
     const actionText = statusVal === 8 ? "Cancelling..." : "Requesting code...";
@@ -849,7 +930,7 @@
       const apiKey = document.getElementById("apiKey").value.trim();
       container.innerHTML = apiKey
         ? `<div class="empty-state"><span class="emoji">📭</span><strong>No numbers yet</strong>Request a new number from the menu to see it appear here.</div>`
-        : `<div class="empty-state"><span class="emoji">🔑</span><strong>No numbers yet</strong>Enter an API key in the menu, then request a new number to get started.</div>`;
+        : `<div class="empty-state"><span class="emoji">🔑</span><strong>No numbers yet</strong>Enter an API key in the menu, then request a new number to get started.<button type="button" class="btn-primary" onclick="focusApiKey()">Enter API key</button></div>`;
       return;
     }
 
@@ -889,10 +970,16 @@
     const isCancelDisabled = remSeconds > 0;
     const cancelLabel = isCancelDisabled ? `Cancel (${formatTime(remSeconds)})` : 'Cancel number';
 
-    const safePhone = escapeHtml(item.phone || "—");
+    const localNumber = getLocalNumber(item.phone);
+    const countryCode = getCountryCode(item.phone);
+    const safePhoneDisplay = countryCode
+      ? `<span class="cc">+${escapeHtml(countryCode)}</span> ${escapeHtml(localNumber)}`
+      : escapeHtml(localNumber || "—");
+    const safeLocalNumber = escapeHtml(localNumber || "");
     const safeId = escapeHtml(item.id || "");
     const safeOtp = item.otp ? escapeHtml(item.otp) : "";
     const safeLog = escapeHtml(item.lastRawResponse || "No response received yet.");
+    const createdLabel = formatCreatedAt(item.createdAt);
 
     const isNewArrival = item.otp && justArrivedIds.has(item.id);
     if (isNewArrival) justArrivedIds.delete(item.id);
@@ -900,7 +987,7 @@
     const otpDisplay = item.otp
       ? `<div class="card-otp-val${isNewArrival ? ' reveal' : ''}">${safeOtp}</div>
          <div class="otp-copy-row">
-           <button type="button" class="icon-btn" title="Copy code" aria-label="Copy code" onclick="copyToClipboard('${safeOtp}', 'Code')">
+           <button type="button" class="icon-btn" title="Copy code" aria-label="Copy code" onclick="copyToClipboard('${safeOtp}', 'Code', this)">
              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
            </button>
          </div>`
@@ -910,13 +997,13 @@
       <div class="item-card ${item.status === 'SUCCESS' ? 'completed' : ''}" id="card-${item.id}">
         <div class="card-top">
           <div class="card-top-left">
-            <span class="card-phone">${safePhone}</span>
-            <button type="button" class="icon-btn" title="Copy number" aria-label="Copy number" onclick="copyToClipboard('${safePhone}', 'Number')">
+            <span class="card-phone">${safePhoneDisplay}</span>
+            <button type="button" class="icon-btn" title="Copy number (without country code)" aria-label="Copy number without country code" onclick="copyToClipboard('${safeLocalNumber}', 'Number', this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </button>
             <span class="badge ${badgeClass}"><span class="badge-dot"></span>${badgeText}</span>
           </div>
-          <div class="card-tx">TX ${safeId}</div>
+          <div class="card-tx">TX ${safeId}${createdLabel ? `<span class="card-created">${createdLabel}</span>` : ''}</div>
         </div>
 
         <div class="card-body">
@@ -947,6 +1034,7 @@
     if (e.key === "Escape") closeDrawer();
   });
 
+  updateStartBtnState();
   startCountdownTicker();
 </script>
 
