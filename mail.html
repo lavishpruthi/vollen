@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stampbox — Custom Domain Mailbox</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #12213A;
+      --ink-soft: #2B3B57;
+      --paper: #FBF7EE;
+      --paper-dim: #F1EADA;
+      --stamp: #C1440E;
+      --stamp-dark: #9C3509;
+      --moss: #3F6659;
+      --moss-dim: #E7EEE9;
+      --muted: #7C8798;
+      --line: #E4DCC8;
+    }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--ink); }
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .font-mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* Perforated edge, like a torn stamp */
+    .perforated::before {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; top: -1px;
+      height: 10px;
+      background-image: radial-gradient(circle, var(--ink) 3.5px, transparent 3.6px);
+      background-size: 16px 16px;
+      background-position: 0 -8px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar { width: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+    .live-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
+
+    .stamp-btn {
+      transform: rotate(-2deg);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .stamp-btn:hover { transform: rotate(0deg) translateY(-1px); }
+    .stamp-btn:active { transform: rotate(0deg) scale(0.97); }
+  </style>
+</head>
+<body class="min-h-screen text-[var(--ink)] p-4 md:p-6">
+
+  <div class="w-full max-w-6xl mx-auto">
+
+    <!-- Header / Address Builder -->
+    <header class="rounded-2xl overflow-hidden shadow-lg mb-6" style="background: var(--ink);">
+      <div class="px-5 pt-5 pb-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+            <rect x="1" y="1" width="32" height="32" rx="7" fill="var(--stamp)" stroke="#F1EADA" stroke-width="1.5" stroke-dasharray="2.6 2.6"/>
+            <path d="M6 11l11 7 11-7" stroke="#FBF7EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <rect x="6" y="9" width="22" height="16" rx="2" stroke="#FBF7EE" stroke-width="2" fill="none"/>
+          </svg>
+          <div>
+            <h1 class="font-display font-bold text-lg text-[var(--paper)] leading-none">Stampbox</h1>
+            <p class="text-xs text-[#8FA0BC] mt-1">a mailbox for one custom address</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="hidden sm:flex items-center gap-2 text-xs text-[#C7D2E3] cursor-pointer select-none bg-[var(--ink-soft)] hover:bg-[#33456510] px-3 py-2 rounded-lg transition">
+            <span class="relative flex h-2 w-2">
+              <span id="liveDot" class="live-dot inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+            </span>
+            <input id="autoRefreshToggle" type="checkbox" checked class="w-3.5 h-3.5 accent-[var(--stamp)] cursor-pointer" />
+            <span>Watch for new mail</span>
+          </label>
+
+          <button id="refreshBtn" title="Refresh inbox now" class="flex items-center gap-2 bg-[var(--ink-soft)] hover:bg-[#38507a] text-[var(--paper)] px-3.5 py-2 rounded-lg text-sm font-medium transition active:scale-95">
+            <i id="refreshIcon" class="fa-solid fa-rotate-right text-sm"></i>
+            <span class="hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Address builder -->
+      <div class="bg-[var(--paper)] px-5 py-4 flex flex-wrap items-center gap-3">
+        <span class="text-xs text-[var(--muted)] font-mono w-full sm:w-auto">Your address</span>
+
+        <div class="flex items-center flex-1 min-w-[240px] bg-white border-2 border-[var(--line)] rounded-xl px-3 py-2 focus-within:border-[var(--stamp)] transition">
+          <input
+            id="usernameInput"
+            type="text"
+            value="shulululu"
+            placeholder="choose-a-name"
+            autocomplete="off"
+            spellcheck="false"
+            class="bg-transparent font-mono font-medium text-[var(--ink)] outline-none flex-1 min-w-0"
+          />
+          <span class="text-[var(--muted)] font-mono px-1">@</span>
+          <span id="domainLabel" class="font-mono font-medium text-[var(--muted)] whitespace-nowrap"></span>
+        </div>
+
+        <button id="randomizeBtn" title="Suggest a random name" class="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-[var(--line)] text-[var(--ink-soft)] hover:border-[var(--stamp)] hover:text-[var(--stamp)] transition">
+          <i class="fa-solid fa-shuffle text-sm"></i>
+        </button>
+
+        <button id="createBtn" class="stamp-btn shrink-0 border-2 border-dashed border-[var(--paper)] bg-[var(--stamp)] hover:bg-[var(--stamp-dark)] text-white font-display font-bold text-sm px-4 py-2.5 rounded-lg shadow-md">
+          Create address
+        </button>
+
+        <button id="copyBtn" title="Copy full address" class="w-10 h-10 flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-dim)] transition">
+          <i class="fa-regular fa-clone"></i>
+        </button>
+      </div>
+
+      <div class="bg-[var(--paper)] px-5 pb-3 -mt-1 flex items-center justify-between">
+        <span id="statusLabel" class="text-xs text-[var(--muted)] font-mono">Ready</span>
+        <span id="activeAddressLabel" class="text-xs font-mono text-[var(--moss)]"></span>
+      </div>
+    </header>
+
+    <!-- Workspace -->
+    <main class="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+
+      <!-- Left: Inbox Message List -->
+      <section class="md:col-span-5 bg-[var(--paper)] rounded-2xl shadow-lg min-h-[560px] flex flex-col overflow-hidden">
+        <div class="px-5 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <h2 class="font-display font-bold text-[var(--ink)] text-base">Inbox</h2>
+          <span id="messageCountBadge" class="bg-[var(--moss-dim)] text-[var(--moss)] font-mono text-xs font-semibold px-2.5 py-0.5 rounded-full">0</span>
+        </div>
+
+        <div id="messagesContainer" class="flex-1 overflow-y-auto scrollbar-thin">
+          <div id="emptyInboxState" class="h-full min-h-[440px] flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-2xl mb-4" style="background: var(--ink);">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+            <h3 class="font-display font-bold text-[var(--ink)] text-base mb-1">Nothing here yet</h3>
+            <p class="text-sm text-[var(--muted)] max-w-xs">Mail sent to your address will land here automatically</p>
+          </div>
+
+          <ul id="messageList" class="divide-y divide-dashed divide-[var(--line)] hidden"></ul>
+        </div>
+      </section>
+
+      <!-- Right: Message Detail View -->
+      <section class="md:col-span-7 bg-[var(--paper)] rounded-2xl shadow-lg min-h-[560px] p-6 flex flex-col relative overflow-hidden">
+
+        <!-- Unselected State -->
+        <div id="noSelectionState" class="h-full min-h-[460px] flex flex-col items-center justify-center text-center m-auto">
+          <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-3xl mb-5" style="background: var(--ink);">
+            <i class="fa-regular fa-envelope-open"></i>
+          </div>
+          <h3 class="font-display font-bold text-[var(--ink)] text-lg mb-1">Pick a message to read it</h3>
+          <p class="text-sm text-[var(--muted)]">Headers, attachments and the full body show up here</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="detailLoadingState" class="hidden h-full min-h-[460px] flex flex-col items-center justify-center text-center m-auto">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3" style="color: var(--stamp);"></i>
+          <p class="text-sm text-[var(--muted)] font-medium">Opening message…</p>
+        </div>
+
+        <!-- Email Details Container -->
+        <div id="messageDetailContent" class="hidden flex flex-col flex-1 h-full">
+          <!-- Message Header Section -->
+          <div class="border-b border-dashed border-[var(--line)] pb-4 mb-4">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <h2 id="detailSubject" class="font-display text-xl font-bold text-[var(--ink)] leading-snug"></h2>
+
+              <div class="flex items-center gap-1 shrink-0">
+                <span id="detailSecurityBadge" class="hidden text-xs font-mono font-medium px-2 py-0.5 rounded-full border"></span>
+                <button id="deleteMessageBtn" title="Delete email" class="text-[var(--muted)] hover:text-[var(--stamp)] p-2 rounded-lg hover:bg-[var(--paper-dim)] transition">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-[var(--muted)] font-mono mb-3">
+              <span id="detailDate"></span>
+              <span id="detailSize"></span>
+            </div>
+
+            <div class="text-sm text-[var(--ink-soft)] space-y-1.5">
+              <div><span class="font-semibold text-[var(--ink)]">From</span> <span id="detailFrom" class="font-mono text-xs"></span></div>
+              <div><span class="font-semibold text-[var(--ink)]">To</span> <span id="detailTo" class="font-mono text-xs"></span></div>
+            </div>
+          </div>
+
+          <!-- Attachments Container -->
+          <div id="attachmentsContainer" class="hidden mb-4 p-3 bg-[var(--paper-dim)] rounded-xl">
+            <span class="text-xs font-semibold text-[var(--muted)] block mb-2">Attachments</span>
+            <div id="attachmentsList" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Message Body Container (Shadow DOM Host) -->
+          <div class="flex-1 border-2 border-[var(--line)] rounded-xl overflow-hidden bg-white min-h-[280px] flex flex-col">
+            <div class="flex items-center justify-between px-3 py-1.5 bg-[var(--paper-dim)] border-b border-[var(--line)] text-xs text-[var(--muted)] font-mono">
+              <span>Message</span>
+              <span id="bodyFormatIndicator">HTML</span>
+            </div>
+            <div id="shadowBodyHost" class="w-full flex-1 min-h-[260px] bg-white p-4 overflow-y-auto scrollbar-thin"></div>
+            <div id="plainTextBody" class="hidden p-4 whitespace-pre-wrap font-sans text-sm text-[var(--ink)] overflow-y-auto scrollbar-thin"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <p class="text-center text-xs text-[#5B6A8A] mt-5">Mail for this address only. Change the name any time to open a different inbox.</p>
+  </div>
+
+  <script>
+    // Paste your Google Apps Script Web App Exec URL here:
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0V0irpJl1QWivnfyMi8q84xlYkibDvxXFWKGjaIvmcZ-T0IzDopCuqo642elNFdTM/exec';
+
+    // Domain is fixed — only the username is chosen by the user.
+    const DOMAIN = 'khaaopeeo.com';
+
+    const usernameInput = document.getElementById('usernameInput');
+    const domainLabel = document.getElementById('domainLabel');
+    const createBtn = document.getElementById('createBtn');
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const refreshIcon = document.getElementById('refreshIcon');
+    const autoRefreshToggle = document.getElementById('autoRefreshToggle');
+    const liveDot = document.getElementById('liveDot');
+    const copyBtn = document.getElementById('copyBtn');
+    const statusLabel = document.getElementById('statusLabel');
+    const activeAddressLabel = document.getElementById('activeAddressLabel');
+
+    const emptyInboxState = document.getElementById('emptyInboxState');
+    const messageList = document.getElementById('messageList');
+    const messageCountBadge = document.getElementById('messageCountBadge');
+
+    const noSelectionState = document.getElementById('noSelectionState');
+    const detailLoadingState = document.getElementById('detailLoadingState');
+    const messageDetailContent = document.getElementById('messageDetailContent');
+
+    const detailSubject = document.getElementById('detailSubject');
+    const detailFrom = document.getElementById('detailFrom');
+    const detailTo = document.getElementById('detailTo');
+    const detailDate = document.getElementById('detailDate');
+    const detailSize = document.getElementById('detailSize');
+    const detailSecurityBadge = document.getElementById('detailSecurityBadge');
+    const attachmentsContainer = document.getElementById('attachmentsContainer');
+    const attachmentsList = document.getElementById('attachmentsList');
+    const shadowBodyHost = document.getElementById('shadowBodyHost');
+    const plainTextBody = document.getElementById('plainTextBody');
+    const bodyFormatIndicator = document.getElementById('bodyFormatIndicator');
+    const deleteMessageBtn = document.getElementById('deleteMessageBtn');
+
+    domainLabel.textContent = DOMAIN;
+
+    // Attach Shadow Root once to isolate message styling without iframe sandbox errors
+    let shadowRoot = null;
+    try {
+      shadowRoot = shadowBodyHost.attachShadow({ mode: 'open' });
+    } catch (e) {
+      shadowRoot = shadowBodyHost.shadowRoot;
+    }
+
+    let currentMessages = [];
+    let selectedMessageId = null;
+    let timer = null;
+    let activeAddress = '';
+
+    const ADJECTIVES = ['amber', 'quiet', 'brisk', 'coral', 'lunar', 'quick', 'misty', 'bold', 'cedar', 'violet', 'sunny', 'rapid'];
+    const NOUNS = ['otter', 'harbor', 'ember', 'willow', 'finch', 'canyon', 'meadow', 'comet', 'ridge', 'sparrow', 'delta', 'pebble'];
+
+    function sanitizeUsername(raw) {
+      return raw.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
+    }
+
+    function getTargetAddress() {
+      const user = sanitizeUsername(usernameInput.value) || 'inbox';
+      return user + '@' + DOMAIN;
+    }
+
+    function suggestUsername() {
+      const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+      const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+      const num = Math.floor(Math.random() * 90 + 10);
+      usernameInput.value = adj + '-' + noun + num;
+    }
+
+    function activateAddress() {
+      activeAddress = getTargetAddress();
+      usernameInput.value = sanitizeUsername(usernameInput.value) || 'inbox';
+      activeAddressLabel.textContent = 'Active: ' + activeAddress;
+      resetDetail();
+      fetchEmails();
+      resetTimer();
+    }
+
+    async function fetchEmails() {
+      const address = activeAddress || getTargetAddress();
+      refreshIcon.classList.add('fa-spin');
+
+      try {
+        const response = await fetch(SCRIPT_URL + '?action=list&address=' + encodeURIComponent(address));
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const data = await response.json();
+        currentMessages = data.messages || [];
+
+        renderMessages();
+        statusLabel.textContent = 'Updated ' + new Date().toLocaleTimeString();
+      } catch (err) {
+        statusLabel.textContent = 'Could not reach the inbox';
+      } finally {
+        setTimeout(function() {
+          refreshIcon.classList.remove('fa-spin');
+        }, 400);
+      }
+    }
+
+    async function loadMessageDetails(msgSummary) {
+      selectedMessageId = msgSummary.id;
+      renderMessages();
+
+      noSelectionState.classList.add('hidden');
+      messageDetailContent.classList.add('hidden');
+      detailLoadingState.classList.remove('hidden');
+
+      const address = activeAddress || getTargetAddress();
+
+      try {
+        const response = await fetch(SCRIPT_URL + '?action=detail&address=' + encodeURIComponent(address) + '&messageId=' + encodeURIComponent(msgSummary.id));
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        const data = await response.json();
+        detailLoadingState.classList.add('hidden');
+        messageDetailContent.classList.remove('hidden');
+
+        detailSubject.textContent = data.subject || msgSummary.subject || '(No subject)';
+        detailFrom.textContent = data.from || msgSummary.from || 'Unknown';
+
+        if (Array.isArray(data.to)) {
+          detailTo.textContent = data.to.join(', ');
+        } else {
+          detailTo.textContent = data.to || data.mailbox || address;
+        }
+
+        const rawDate = data.date || msgSummary.date;
+        detailDate.textContent = rawDate ? new Date(rawDate).toLocaleString() : '';
+        detailSize.textContent = (data.size || msgSummary.size) ? (data.size || msgSummary.size) + ' bytes' : '';
+
+        if (data.security_badge) {
+          detailSecurityBadge.classList.remove('hidden');
+          detailSecurityBadge.textContent = data.security_badge.label || 'Unknown';
+          if (data.security_badge.label && data.security_badge.label.toLowerCase() === 'verified') {
+            detailSecurityBadge.className = 'text-xs font-mono font-medium px-2 py-0.5 rounded-full border';
+            detailSecurityBadge.style.background = 'var(--moss-dim)';
+            detailSecurityBadge.style.color = 'var(--moss)';
+            detailSecurityBadge.style.borderColor = 'var(--moss)';
+          } else {
+            detailSecurityBadge.className = 'text-xs font-mono font-medium px-2 py-0.5 rounded-full border';
+            detailSecurityBadge.style.background = 'var(--paper-dim)';
+            detailSecurityBadge.style.color = 'var(--muted)';
+            detailSecurityBadge.style.borderColor = 'var(--line)';
+          }
+        } else {
+          detailSecurityBadge.classList.add('hidden');
+        }
+
+        if (Array.isArray(data.attachments) && data.attachments.length > 0) {
+          attachmentsContainer.classList.remove('hidden');
+          attachmentsList.innerHTML = '';
+          data.attachments.forEach(function(att) {
+            const span = document.createElement('span');
+            span.className = 'inline-flex items-center gap-1.5 bg-white border border-[var(--line)] px-2.5 py-1 rounded-lg text-xs font-mono text-[var(--ink-soft)]';
+            span.innerHTML = '<i class="fa-solid fa-paperclip" style="color: var(--muted);"></i> ' + escapeHtml(att.filename || 'attachment');
+            attachmentsList.appendChild(span);
+          });
+        } else {
+          attachmentsContainer.classList.add('hidden');
+        }
+
+        const htmlContent = data.body && data.body.html ? data.body.html : null;
+        const textContent = (data.body && data.body.text) ? data.body.text : (data.text || '');
+
+        if (htmlContent) {
+          bodyFormatIndicator.textContent = 'HTML';
+          shadowBodyHost.classList.remove('hidden');
+          plainTextBody.classList.add('hidden');
+
+          // Strip any script tags from HTML body
+          const sanitized = htmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+          // Inject into isolated Shadow DOM with default styling
+          shadowRoot.innerHTML = '<style>:host { all: initial; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.5; color: #1e293b; display: block; } img { max-width: 100%; height: auto; }</style>' + sanitized;
+        } else {
+          bodyFormatIndicator.textContent = 'Plain text';
+          shadowBodyHost.classList.add('hidden');
+          plainTextBody.classList.remove('hidden');
+          plainTextBody.textContent = textContent || '(Empty email body)';
+        }
+
+      } catch (err) {
+        detailLoadingState.classList.add('hidden');
+        messageDetailContent.classList.remove('hidden');
+        shadowBodyHost.classList.add('hidden');
+        plainTextBody.classList.remove('hidden');
+        plainTextBody.textContent = 'Failed to load message content: ' + err.message;
+      }
+    }
+
+    async function deleteMessage() {
+      if (!selectedMessageId) return;
+      if (!confirm('Delete this message? This can\'t be undone.')) return;
+
+      const address = activeAddress || getTargetAddress();
+      statusLabel.textContent = 'Deleting…';
+
+      try {
+        const response = await fetch(SCRIPT_URL + '?action=delete&address=' + encodeURIComponent(address) + '&messageId=' + encodeURIComponent(selectedMessageId));
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        resetDetail();
+        fetchEmails();
+      } catch (err) {
+        alert('Failed to delete message: ' + err.message);
+      }
+    }
+
+    function renderMessages() {
+      messageCountBadge.textContent = currentMessages.length;
+
+      if (!currentMessages.length) {
+        emptyInboxState.classList.remove('hidden');
+        messageList.classList.add('hidden');
+        return;
+      }
+
+      emptyInboxState.classList.add('hidden');
+      messageList.classList.remove('hidden');
+      messageList.innerHTML = '';
+
+      currentMessages.forEach(function(msg) {
+        const isSelected = msg.id === selectedMessageId;
+        const li = document.createElement('li');
+        li.className = 'p-4 cursor-pointer transition border-l-4 ' + (
+          isSelected
+            ? 'bg-[var(--paper-dim)]'
+            : 'hover:bg-[var(--paper-dim)]/60 border-transparent'
+        );
+        if (isSelected) li.style.borderColor = 'var(--stamp)';
+
+        const sender = msg.from || 'Unknown sender';
+        const subject = msg.subject || '(No subject)';
+        const dateStr = msg.date ? new Date(msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+        li.innerHTML =
+          '<div class="flex justify-between items-center mb-1">' +
+            '<span class="font-semibold text-sm text-[var(--ink)] truncate max-w-[200px]">' + escapeHtml(sender) + '</span>' +
+            '<span class="text-xs text-[var(--muted)] font-mono">' + dateStr + '</span>' +
+          '</div>' +
+          '<div class="text-sm font-medium text-[var(--ink-soft)] truncate mb-1">' + escapeHtml(subject) + '</div>' +
+          '<div class="text-xs text-[var(--muted)] flex justify-between font-mono">' +
+            '<span class="truncate">' + escapeHtml(msg.id) + '</span>' +
+            '<span>' + (msg.size ? msg.size + ' B' : '') + '</span>' +
+          '</div>';
+
+        li.onclick = function() {
+          loadMessageDetails(msg);
+        };
+        messageList.appendChild(li);
+      });
+    }
+
+    function resetDetail() {
+      selectedMessageId = null;
+      noSelectionState.classList.remove('hidden');
+      messageDetailContent.classList.add('hidden');
+      detailLoadingState.classList.add('hidden');
+      if (shadowRoot) shadowRoot.innerHTML = '';
+      plainTextBody.textContent = '';
+    }
+
+    function resetTimer() {
+      if (timer) clearInterval(timer);
+      if (autoRefreshToggle.checked) {
+        liveDot.style.display = 'inline-flex';
+        timer = setInterval(fetchEmails, 5000);
+      } else {
+        liveDot.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Event Listeners
+    createBtn.addEventListener('click', activateAddress);
+
+    usernameInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') activateAddress();
+    });
+
+    randomizeBtn.addEventListener('click', suggestUsername);
+
+    refreshBtn.addEventListener('click', function() {
+      fetchEmails();
+      resetTimer();
+    });
+
+    autoRefreshToggle.addEventListener('change', resetTimer);
+
+    copyBtn.addEventListener('click', function() {
+      navigator.clipboard.writeText(activeAddress || getTargetAddress());
+      const orig = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<i class="fa-solid fa-check" style="color:#10b981;"></i>';
+      setTimeout(function() {
+        copyBtn.innerHTML = orig;
+      }, 1500);
+    });
+
+    deleteMessageBtn.addEventListener('click', deleteMessage);
+
+    // Initial Load
+    activateAddress();
+  </script>
+</body>
+</html>
