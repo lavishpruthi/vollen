@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rider Ledger</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 15px; color: #222; }
+  h1 { margin-bottom: 5px; }
+  #status { color: #666; font-size: 13px; margin-bottom: 15px; }
+  #status.ok { color: green; }
+  .filebar { margin-bottom: 20px; }
+  .filebar button { padding: 6px 12px; margin-right: 8px; cursor: pointer; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+  .tabs button { padding: 8px 14px; cursor: pointer; border: 1px solid #999; background: #f2f2f2; border-radius: 4px; }
+  .tabs button.active { background: #333; color: #fff; border-color: #333; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; font-size: 14px; }
+  th { background: #f5f5f5; }
+  input[type=text], input[type=number] { padding: 5px; }
+  button.small { padding: 3px 8px; font-size: 12px; cursor: pointer; }
+  .addrow { margin-bottom: 15px; }
+  .done { color: #888; }
+  .due { color: #b8860b; font-weight: bold; }
+  h2 { margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<h1>Rider Ledger</h1>
+<div id="status">No file loaded yet — using browser storage until you open/save a file.</div>
+
+<div class="filebar">
+  <button onclick="openFile()">Open data.json</button>
+  <button onclick="saveAsFile()">Save As...</button>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="addrow">
+  <input type="text" id="custName" placeholder="New customer name">
+  <button onclick="addCustomer()">Add Customer</button>
+</div>
+
+<h2>Currently Handling</h2>
+<table>
+  <thead>
+    <tr><th>Customer</th><th>Rides</th><th>₹300 Collected</th><th>Incentive</th><th></th></tr>
+  </thead>
+  <tbody id="activeBody"></tbody>
+</table>
+
+<h2>History</h2>
+<table>
+  <thead>
+    <tr><th>Customer</th><th>Rides</th><th>Incentive Paid (₹)</th><th></th></tr>
+  </thead>
+  <tbody id="historyBody"></tbody>
+</table>
+
+<script>
+const DRIVERS = ["Tanmay", "Jashan", "Prince", "Lavish"];
+const INCENTIVE_TARGET = 3; 
+const RIDE_TARGET = 3;      
+const DEFAULT_INCENTIVE = 300;
+
+let customers = [];
+let activeDriver = DRIVERS[0];
+let fileHandle = null;
+
+// ---------- storage & persistence ----------
+
+function loadFromLocalStorage() {
+  const raw = localStorage.getItem('riderLedgerData');
+  if (raw) {
+    try { customers = JSON.parse(raw).customers || []; } catch (e) { customers = []; }
+  }
+}
+
+async function persist() {
+  const json = JSON.stringify({ customers }, null, 2);
+  
+  // 1. Always save locally in the browser immediately (no prompt, no popups)
+  localStorage.setItem('riderLedgerData', json);
+
+  // 2. If a local file was opened/selected, silently overwrite it
+  if (fileHandle) {
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(json);
+      await writable.close();
+      setStatus(`Saved directly to ${fileHandle.name} at ${new Date().toLocaleTimeString()}`, true);
+      return;
+    } catch (e) {
+      setStatus('File handle expired or locked. Changes kept in browser storage.', false);
+      return;
+    }
+  }
+
+  // If no file is opened, stay completely quiet (no downloads!)
+  setStatus(`Saved to browser storage at ${new Date().toLocaleTimeString()} (Open data.json to sync to disk)`, true);
+}
+
+async function openFile() {
+  if (!window.showOpenFilePicker) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+      const text = await file.text();
+      try { customers = JSON.parse(text).customers || []; } catch (e) { customers = []; }
+      localStorage.setItem('riderLedgerData', JSON.stringify({ customers }, null, 2));
+      setStatus(`Imported ${file.name}. Saving to browser storage.`, true);
+      renderAll();
+    };
+    input.click();
+    return;
+  }
+
+  try {
+    [fileHandle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    try { customers = JSON.parse(text).customers || []; } catch (e) { customers = []; }
+    
+    localStorage.setItem('riderLedgerData', JSON.stringify({ customers }, null, 2));
+    setStatus(`Linked to ${fileHandle.name}. Future clicks will auto-save silently to this file.`, true);
+    renderAll();
+  } catch (e) { /* user cancelled */ }
+}
+
+async function saveAsFile() {
+  const json = JSON.stringify({ customers }, null, 2);
+
+  if (!window.showSaveFilePicker) {
+    // Manual export fallback for unsupported browsers
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setStatus('Exported data.json file.', true);
+    return;
+  }
+
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: 'data.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    await persist();
+  } catch (e) { /* user cancelled */ }
+}
+
+function setStatus(msg, ok) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = ok ? 'ok' : '';
+}
+
+// ---------- actions ----------
+
+async function addCustomer() {
+  const input = document.getElementById('custName');
+  const name = input.value.trim();
+  if (!name) return;
+  customers.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: name,
+    driver: activeDriver,
+    rides: 0,
+    incentiveAmount: DEFAULT_INCENTIVE,
+    incentiveGiven: false,
+    createdAt: Date.now(),
+    givenAt: null
+  });
+  input.value = '';
+  renderAll();
+  await persist();
+}
+
+async function bumpRide(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  c.rides = Math.min((c.rides || 0) + 1, INCENTIVE_TARGET);
+  renderAll();
+  await persist();
+}
+
+async function markGiven(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  const amtInput = document.getElementById('amt_' + id);
+  c.incentiveAmount = amtInput ? (Number(amtInput.value) || DEFAULT_INCENTIVE) : DEFAULT_INCENTIVE;
+  c.incentiveGiven = true;
+  c.givenAt = Date.now();
+  renderAll();
+  await persist();
+}
+
+async function removeCustomer(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm('Remove ' + c.name + '?')) return;
+  customers = customers.filter(x => x.id !== id);
+  renderAll();
+  await persist();
+}
+
+// ---------- rendering ----------
+
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  DRIVERS.forEach(name => {
+    const btn = document.createElement('button');
+    const count = customers.filter(c => c.driver === name && !c.incentiveGiven).length;
+    btn.textContent = name + ' (' + count + ')';
+    btn.className = name === activeDriver ? 'active' : '';
+    btn.onclick = () => { activeDriver = name; renderAll(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderTables() {
+  const mine = customers.filter(c => c.driver === activeDriver);
+  const active = mine.filter(c => !c.incentiveGiven);
+  const history = mine.filter(c => c.incentiveGiven);
+
+  const activeBody = document.getElementById('activeBody');
+  activeBody.innerHTML = '';
+  if (active.length === 0) {
+    activeBody.innerHTML = '<tr><td colspan="5">No one in progress yet.</td></tr>';
+  }
+  active.forEach(c => {
+    const tr = document.createElement('tr');
+    const paidFee = c.rides >= RIDE_TARGET;
+    const eligible = c.rides >= INCENTIVE_TARGET;
+    tr.innerHTML = `
+      <td>${escapeHtml(c.name)}</td>
+      <td>${c.rides} / ${INCENTIVE_TARGET}
+        <button class="small" ${c.rides >= INCENTIVE_TARGET ? 'disabled' : ''} onclick="bumpRide('${c.id}')">+1 ride</button>
+      </td>
+      <td>${paidFee ? '✓' : '—'}</td>
+      <td>${eligible
+          ? `<span class="due">Due</span> ₹<input type="number" id="amt_${c.id}" value="${c.incentiveAmount}" style="width:60px" min="0" step="10">
+             <button class="small" onclick="markGiven('${c.id}')">Mark given</button>`
+          : '—'}
+      </td>
+      <td><button class="small" onclick="removeCustomer('${c.id}')">remove</button></td>
+    `;
+    activeBody.appendChild(tr);
+  });
+
+  const historyBody = document.getElementById('historyBody');
+  historyBody.innerHTML = '';
+  if (history.length === 0) {
+    historyBody.innerHTML = '<tr><td colspan="4">History is empty so far.</td></tr>';
+  }
+  history.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.className = 'done';
+    tr.innerHTML = `
+      <td>${escapeHtml(c.name)}</td>
+      <td>${c.rides} / ${INCENTIVE_TARGET}</td>
+      <td>₹${c.incentiveAmount}</td>
+      <td><button class="small" onclick="removeCustomer('${c.id}')">remove</button></td>
+    `;
+    historyBody.appendChild(tr);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll() {
+  renderTabs();
+  renderTables();
+}
+
+// ---------- init ----------
+loadFromLocalStorage();
+renderAll();
+</script>
+
+</body>
+</html>
