@@ -1,564 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Rider Ledger</title>
-<style>
-  :root {
-    --bg: #f8fafc;
-    --card-bg: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --success: #16a34a;
-    --warning-bg: #fefce8;
-    --warning-border: #fef08a;
-    --warning-text: #854d0e;
-    --danger: #ef4444;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Driver & Customer Ledger</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --muted: #64748b;
+      --border: #e2e8f0; --primary: #2563eb; --success: #16a34a;
+      --warn-bg: #fefce8; --warn-border: #fef08a; --warn-text: #854d0e;
+      --danger: #ef4444; --chip: #f1f5f9;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1220; --card: #131b2c; --text: #e6ebf5; --muted: #93a1b7;
+        --border: #253248; --primary: #5b8def; --success: #34d399;
+        --warn-bg: #2a230c; --warn-border: #4d3d10; --warn-text: #fbd975;
+        --danger: #f87171; --chip: #1a2438;
+      }
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); margin: 0; padding: 16px;
+      max-width: 640px; margin-inline: auto;
+    }
 
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text-main);
-    margin: 0;
-    padding: 16px;
-    max-width: 650px;
-    margin-left: auto;
-    margin-right: auto;
-  }
+    #progress-container {
+      position: fixed; top: 0; left: 0; width: 100%; height: 4px;
+      background: transparent; z-index: 9999; display: none;
+    }
+    #progress-bar {
+      height: 100%; width: 100%; background: var(--primary);
+      animation: indeterminate 1.2s infinite linear;
+      transform-origin: 0% 50%;
+    }
+    @keyframes indeterminate {
+      0% { transform: translateX(0) scaleX(0.05); }
+      40% { transform: translateX(30%) scaleX(0.4); }
+      100% { transform: translateX(100%) scaleX(0.1); }
+    }
 
-  header { margin-bottom: 16px; }
-  h1 { font-size: 24px; font-weight: 700; margin: 0 0 6px 0; }
-  
-  #status {
-    font-size: 13px;
-    color: var(--text-muted);
-    background: #f1f5f9;
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin-bottom: 16px;
-    word-break: break-word;
-  }
-  #status.ok { color: var(--success); background: #f0fdf4; }
+    header { margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+    h1 { font-size: 22px; font-weight: 700; margin: 0 0 6px; }
+    #status {
+      font-size: 13px; color: var(--muted); background: var(--chip);
+      padding: 6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    #status.ok .dot { background: var(--success); }
+    #status.err .dot { background: var(--danger); }
+    #status.busy .dot { background: var(--primary); }
 
-  /* Toolbar */
-  .toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-  .btn-outline {
-    flex: 1;
-    padding: 10px;
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
+    .driver-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px; margin-bottom: 20px;
+    }
+    .driver-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+    .driver-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+    .driver-btn {
+      border: 1px solid var(--border); background: var(--chip); padding: 8px 14px;
+      border-radius: 8px; font-weight: 600; font-size: 13px; color: var(--muted);
+      cursor: pointer; white-space: nowrap; display: flex; flex-direction: column; align-items: center;
+    }
+    .driver-btn small { font-size: 10px; opacity: 0.8; }
+    .driver-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    
+    .add-driver-form {
+      display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);
+    }
+    .add-driver-form input {
+      padding: 8px 10px; font-size: 13px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--bg); color: var(--text); outline: none;
+    }
+    .btn-secondary {
+      background: var(--chip); color: var(--text); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0 12px; font-weight: 600; font-size: 13px; cursor: pointer;
+    }
 
-  /* Segmented Driver Tabs */
-  .tabs {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    background: #e2e8f0;
-    padding: 4px;
-    border-radius: 10px;
-    margin-bottom: 16px;
-  }
-  .tab-btn {
-    border: none;
-    background: transparent;
-    padding: 10px 4px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 7px;
-    color: var(--text-muted);
-    cursor: pointer;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .tab-btn.active {
-    background: #fff;
-    color: var(--text-main);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  }
+    .add-cust-box { display: flex; gap: 8px; margin-bottom: 20px; }
+    .add-cust-box input {
+      flex: 1; padding: 12px 14px; font-size: 15px; border: 1px solid var(--border);
+      border-radius: 10px; outline: none; background: var(--card); color: var(--text);
+    }
+    .btn-primary {
+      background: var(--primary); color: #fff; border: none; border-radius: 10px;
+      padding: 0 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
 
-  /* Add Customer Form */
-  .add-form {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-  }
-  .add-form input {
-    flex: 1;
-    padding: 12px 14px;
-    font-size: 15px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-    background: #fff;
-  }
-  .add-form input:focus { border-color: var(--primary); }
-  .btn-primary {
-    background: var(--primary);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 0 18px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-  }
+    .section-head { font-size: 15px; font-weight: 700; margin: 20px 0 10px; display: flex; justify-content: space-between; }
+    .badge { font-size: 12px; background: var(--chip); color: var(--muted); padding: 2px 8px; border-radius: 12px; }
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    .empty { text-align: center; padding: 20px; color: var(--muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 10px; }
 
-  /* Section Titles */
-  .section-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 24px 0 12px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .badge {
-    font-size: 12px;
-    background: #e2e8f0;
-    color: var(--text-muted);
-    padding: 2px 8px;
-    border-radius: 12px;
-  }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .card-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .cust-title { font-weight: 600; font-size: 15px; }
+    .cust-id { font-size: 12px; color: var(--muted); font-family: monospace; }
 
-  /* Card Lists */
-  .customer-list { display: flex; flex-direction: column; gap: 10px; }
-  .empty-state {
-    text-align: center;
-    padding: 24px 12px;
-    color: var(--text-muted);
-    font-size: 14px;
-    background: #fff;
-    border-radius: 10px;
-    border: 1px dashed var(--border);
-  }
+    .pills { display: flex; gap: 6px; height: 8px; }
+    .pill { flex: 1; background: var(--chip); border-radius: 4px; }
+    .pill.filled { background: var(--primary); }
 
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-  }
+    .meta-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+    .fee-tag { font-weight: 600; }
+    .fee-tag.ready { color: var(--success); }
 
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .cust-name { font-size: 16px; font-weight: 600; }
-  .btn-icon {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 4px;
-    font-size: 18px;
-    line-height: 1;
-  }
-
-  /* Ride Progress Track */
-  .progress-section {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .progress-pills {
-    display: flex;
-    gap: 6px;
-    height: 8px;
-  }
-  .pill {
-    flex: 1;
-    background: #e2e8f0;
-    border-radius: 4px;
-  }
-  .pill.active { background: var(--primary); }
-
-  .meta-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-  }
-  .tag-fee {
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .tag-fee.paid { color: var(--success); }
-  .tag-fee.pending { color: var(--text-muted); }
-
-  /* Incentive Box */
-  .incentive-box {
-    background: var(--warning-bg);
-    border: 1px solid var(--warning-border);
-    padding: 10px 12px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .incentive-box span {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--warning-text);
-  }
-  .incentive-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .amt-input {
-    width: 75px;
-    padding: 6px 8px;
-    font-size: 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    text-align: right;
-  }
-  .btn-give {
-    background: #ca8a04;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .btn-ride {
-    width: 100%;
-    padding: 10px;
-    border: none;
-    background: #eff6ff;
-    color: var(--primary);
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-ride:active { background: #dbeafe; }
-
-  /* History Card */
-  .card.history-card {
-    opacity: 0.85;
-    background: #f8fafc;
-  }
-</style>
+    .btn-step {
+      width: 100%; padding: 10px; border: none; background: var(--chip);
+      color: var(--primary); border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    .incentive-box {
+      background: var(--warn-bg); border: 1px solid var(--warn-border); padding: 10px;
+      border-radius: 8px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .incentive-box span { font-size: 13px; font-weight: 700; color: var(--warn-text); }
+    .amt-input { width: 70px; padding: 6px; font-size: 14px; border: 1px solid var(--border); border-radius: 4px; text-align: right; }
+    .btn-pay { background: #ca8a04; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 600; cursor: pointer; }
+  </style>
 </head>
 <body>
 
+<div id="progress-container"><div id="progress-bar"></div></div>
+
 <header>
-  <h1>Rider Ledger</h1>
-  <div id="status">No file loaded — saving in browser storage.</div>
+  <div>
+    <h1>Rider Ledger</h1>
+    <div id="activeDriverLabel" style="font-size:13px; color:var(--muted);">Select a driver</div>
+  </div>
+  <div id="status"><span class="dot"></span><span id="statusText">Connecting…</span></div>
 </header>
 
-<div class="toolbar">
-  <button class="btn-outline" onclick="openFile()">Open data.json</button>
-  <button class="btn-outline" onclick="saveAsFile()">Save As...</button>
+<div class="driver-box">
+  <div class="driver-title">Drivers</div>
+  <div class="driver-tabs" id="driverTabs"></div>
+  
+  <div class="add-driver-form">
+    <input type="text" id="newDriverId" placeholder="ID (e.g. D1)" style="width: 100px;">
+    <input type="text" id="newDriverName" placeholder="Driver Name" style="flex: 1;">
+    <button class="btn-secondary" onclick="handleAddDriver()">+ Add Driver</button>
+  </div>
 </div>
 
-<nav class="tabs" id="tabs"></nav>
-
-<div class="add-form">
-  <input type="text" id="custName" placeholder="New customer name" autocomplete="off">
-  <button class="btn-primary" onclick="addCustomer()">Add</button>
+<div class="add-cust-box">
+  <input type="text" id="custNameInput" placeholder="Add customer for current driver..." autocomplete="off">
+  <button class="btn-primary" onclick="handleAddCustomer()">Add</button>
 </div>
 
-<div class="section-title">
-  <span>Currently Handling</span>
-  <span class="badge" id="activeCountBadge">0</span>
+<div class="section-head">
+  <span>In Progress</span><span class="badge" id="activeBadge">0</span>
 </div>
-<div class="customer-list" id="activeList"></div>
+<div class="list" id="activeList"></div>
 
-<div class="section-title">
-  <span>History</span>
-  <span class="badge" id="historyCountBadge">0</span>
+<div class="section-head">
+  <span>History (Incentive Paid)</span><span class="badge" id="historyBadge">0</span>
 </div>
-<div class="customer-list" id="historyList"></div>
+<div class="list" id="historyList"></div>
 
 <script>
-const DRIVERS = ["Tanmay", "Jashan", "Prince", "Lavish"];
-const INCENTIVE_TARGET = 3; 
-const RIDE_TARGET = 3;      
-const DEFAULT_INCENTIVE = 300;
+  // VERIFY YOUR DEPLOYMENT URL HERE
+  const API_URL = "https://script.google.com/macros/s/AKfycbwLeBz8ElKd90cjSTiwTEjDJsKIAeT5JPut-fOLWaoo7lx0UIIwL75HewYWmwbs6mbbDQ/exec";
+  const TARGET_RIDES = 3;
+  const DEFAULT_INCENTIVE = 300;
 
-let customers = [];
-let activeDriver = DRIVERS[0];
-let fileHandle = null;
+  let drivers = [];
+  let currentDriverId = null;
+  let customers = [];
 
-// ---------- Persistence ----------
-
-function loadFromLocalStorage() {
-  const raw = localStorage.getItem('riderLedgerData');
-  if (raw) {
-    try { customers = JSON.parse(raw).customers || []; } catch (e) { customers = []; }
+  function showBar(msg) {
+    document.getElementById('progress-container').style.display = 'block';
+    setStatus(msg, 'busy');
   }
-}
 
-async function persist() {
-  const json = JSON.stringify({ customers }, null, 2);
-  localStorage.setItem('riderLedgerData', json);
+  function hideBar(msg, statusClass) {
+    document.getElementById('progress-container').style.display = 'none';
+    setStatus(msg, statusClass);
+  }
 
-  if (fileHandle) {
+  function setStatus(msg, state) {
+    document.getElementById('statusText').innerText = msg;
+    document.getElementById('status').className = state || '';
+  }
+
+  async function request(params) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
-      const writable = await fileHandle.createWritable();
-      await writable.write(json);
-      await writable.close();
-      setStatus(`Saved to ${fileHandle.name} at ${new Date().toLocaleTimeString()}`, true);
-      return;
-    } catch (e) {
-      setStatus('File locked. Changes stored safely in browser storage.', false);
-      return;
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`${API_URL}?${query}`, { method: 'GET', signal: controller.signal });
+      clearTimeout(timer);
+      const json = await res.json();
+      if (json && json.error) throw new Error(json.error);
+      return json;
+    } catch (err) {
+      clearTimeout(timer);
+      throw (err.name === 'AbortError') ? new Error('Request timed out') : err;
     }
   }
 
-  setStatus(`Saved to browser storage at ${new Date().toLocaleTimeString()}`, true);
-}
-
-async function openFile() {
-  if (!window.showOpenFilePicker) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json,application/json';
-    input.onchange = async () => {
-      const file = input.files[0];
-      if (!file) return;
-      const text = await file.text();
-      try { customers = JSON.parse(text).customers || []; } catch (e) { customers = []; }
-      localStorage.setItem('riderLedgerData', JSON.stringify({ customers }, null, 2));
-      setStatus(`Loaded ${file.name}.`, true);
-      renderAll();
-    };
-    input.click();
-    return;
-  }
-
-  try {
-    [fileHandle] = await window.showOpenFilePicker({
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-    });
-    const file = await fileHandle.getFile();
-    const text = await file.text();
-    try { customers = JSON.parse(text).customers || []; } catch (e) { customers = []; }
-    localStorage.setItem('riderLedgerData', JSON.stringify({ customers }, null, 2));
-    setStatus(`Linked to ${fileHandle.name}.`, true);
-    renderAll();
-  } catch (e) { /* cancelled */ }
-}
-
-async function saveAsFile() {
-  const json = JSON.stringify({ customers }, null, 2);
-  if (!window.showSaveFilePicker) {
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setStatus('Exported data.json.', true);
-    return;
-  }
-
-  try {
-    fileHandle = await window.showSaveFilePicker({
-      suggestedName: 'data.json',
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-    });
-    await persist();
-  } catch (e) { /* cancelled */ }
-}
-
-function setStatus(msg, ok) {
-  const el = document.getElementById('status');
-  el.textContent = msg;
-  el.className = ok ? 'ok' : '';
-}
-
-// ---------- Actions ----------
-
-async function addCustomer() {
-  const input = document.getElementById('custName');
-  const name = input.value.trim();
-  if (!name) return;
-  customers.push({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    name: name,
-    driver: activeDriver,
-    rides: 0,
-    incentiveAmount: DEFAULT_INCENTIVE,
-    incentiveGiven: false,
-    createdAt: Date.now(),
-    givenAt: null
-  });
-  input.value = '';
-  renderAll();
-  await persist();
-}
-
-async function bumpRide(id) {
-  const c = customers.find(x => x.id === id);
-  if (!c) return;
-  c.rides = Math.min((c.rides || 0) + 1, INCENTIVE_TARGET);
-  renderAll();
-  await persist();
-}
-
-async function markGiven(id) {
-  const c = customers.find(x => x.id === id);
-  if (!c) return;
-  const amtInput = document.getElementById('amt_' + id);
-  c.incentiveAmount = amtInput ? (Number(amtInput.value) || DEFAULT_INCENTIVE) : DEFAULT_INCENTIVE;
-  c.incentiveGiven = true;
-  c.givenAt = Date.now();
-  renderAll();
-  await persist();
-}
-
-async function removeCustomer(id) {
-  const c = customers.find(x => x.id === id);
-  if (!c) return;
-  if (!confirm(`Remove ${c.name}?`)) return;
-  customers = customers.filter(x => x.id !== id);
-  renderAll();
-  await persist();
-}
-
-// ---------- Rendering ----------
-
-function renderTabs() {
-  const el = document.getElementById('tabs');
-  el.innerHTML = '';
-  DRIVERS.forEach(name => {
-    const btn = document.createElement('button');
-    const count = customers.filter(c => c.driver === name && !c.incentiveGiven).length;
-    btn.className = `tab-btn ${name === activeDriver ? 'active' : ''}`;
-    btn.innerHTML = `${escapeHtml(name)} <small>(${count})</small>`;
-    btn.onclick = () => { activeDriver = name; renderAll(); };
-    el.appendChild(btn);
-  });
-}
-
-function renderCardLists() {
-  const driverCustomers = customers.filter(c => c.driver === activeDriver);
-  const active = driverCustomers.filter(c => !c.incentiveGiven);
-  const history = driverCustomers.filter(c => c.incentiveGiven);
-
-  document.getElementById('activeCountBadge').textContent = active.length;
-  document.getElementById('historyCountBadge').textContent = history.length;
-
-  // Active list
-  const activeList = document.getElementById('activeList');
-  activeList.innerHTML = '';
-  if (active.length === 0) {
-    activeList.innerHTML = '<div class="empty-state">No customers in progress for this driver.</div>';
-  } else {
-    active.forEach(c => {
-      const isFeePaid = c.rides >= RIDE_TARGET;
-      const isEligible = c.rides >= INCENTIVE_TARGET;
-
-      let pills = '';
-      for (let i = 1; i <= INCENTIVE_TARGET; i++) {
-        pills += `<div class="pill ${i <= c.rides ? 'active' : ''}"></div>`;
+  async function init() {
+    showBar('Loading drivers…');
+    try {
+      drivers = await request({ action: 'get_drivers' });
+      if (!drivers || drivers.length === 0) {
+        const defaults = [
+          { driverId: 'D1', name: 'Tanmay' },
+          { driverId: 'D2', name: 'Jashan' },
+          { driverId: 'D3', name: 'Prince' },
+          { driverId: 'D4', name: 'Lavish' }
+        ];
+        for (const s of defaults) {
+          await request({ action: 'add_driver', driverId: s.driverId, name: s.name });
+        }
+        drivers = await request({ action: 'get_drivers' });
       }
+      renderDriverTabs();
+      if (drivers.length > 0) {
+        selectDriver(drivers[0].driverId);
+      }
+    } catch (e) {
+      hideBar('Failed: ' + e.message, 'err');
+    }
+  }
 
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div class="card-header">
-          <span class="cust-name">${escapeHtml(c.name)}</span>
-          <button class="btn-icon" title="Remove" onclick="removeCustomer('${c.id}')">×</button>
-        </div>
+  function renderDriverTabs() {
+    const wrap = document.getElementById('driverTabs');
+    wrap.innerHTML = drivers.map(d => `
+      <button class="driver-btn ${d.driverId === currentDriverId ? 'active' : ''}" onclick="selectDriver('${d.driverId}')">
+        <span>${d.name}</span>
+        <small>${d.driverId}</small>
+      </button>
+    `).join('');
+  }
 
-        <div class="progress-section">
-          <div class="progress-pills">${pills}</div>
-          <div class="meta-row">
-            <span style="color:var(--text-muted);">${c.rides} of ${INCENTIVE_TARGET} rides</span>
-            <span class="tag-fee ${isFeePaid ? 'paid' : 'pending'}">
-              ${isFeePaid ? '✓ ₹300 Collected' : '— Fee Pending'}
-            </span>
-          </div>
-        </div>
+  async function selectDriver(dId) {
+    currentDriverId = dId;
+    renderDriverTabs();
 
-        ${isEligible ? `
-          <div class="incentive-box">
-            <span>Incentive Due</span>
-            <div class="incentive-actions">
-              ₹<input type="number" class="amt-input" id="amt_${c.id}" value="${c.incentiveAmount}" min="0" step="10">
-              <button class="btn-give" onclick="markGiven('${c.id}')">Mark Paid</button>
+    const dObj = drivers.find(d => String(d.driverId) === String(dId));
+    document.getElementById('activeDriverLabel').innerText = dObj ? `${dObj.name} (${dObj.driverId})` : dId;
+
+    showBar(`Loading customers for ${dObj ? dObj.name : dId}…`);
+    try {
+      customers = await request({ action: 'get_customers', driverId: dId });
+      renderCustomers();
+      hideBar(`Loaded ${customers.length} customer(s)`, 'ok');
+    } catch (e) {
+      hideBar('Load error: ' + e.message, 'err');
+    }
+  }
+
+  async function handleAddDriver() {
+    const idInput = document.getElementById('newDriverId');
+    const nameInput = document.getElementById('newDriverName');
+    const driverId = idInput.value.trim();
+    const name = nameInput.value.trim();
+
+    if (!driverId || !name) return alert('Provide both Driver ID and Name');
+
+    showBar('Adding driver…');
+    try {
+      await request({ action: 'add_driver', driverId, name });
+      idInput.value = '';
+      nameInput.value = '';
+      drivers = await request({ action: 'get_drivers' });
+      renderDriverTabs();
+      selectDriver(driverId);
+    } catch (e) {
+      hideBar(e.message, 'err');
+    }
+  }
+
+  async function handleAddCustomer() {
+    if (!currentDriverId) return alert('Select a driver first');
+    const input = document.getElementById('custNameInput');
+    const name = input.value.trim();
+    if (!name) return;
+
+    showBar(`Saving ${name}…`);
+    try {
+      await request({ action: 'add_customer', driverId: currentDriverId, customerName: name });
+      input.value = '';
+      // Refetch the full list directly from the sheet
+      customers = await request({ action: 'get_customers', driverId: currentDriverId });
+      renderCustomers();
+      hideBar(`Added ${name}`, 'ok');
+    } catch (e) {
+      hideBar('Add failed: ' + e.message, 'err');
+    }
+  }
+
+  async function bumpRide(customerId) {
+    const c = customers.find(x => String(x.customerId) === String(customerId));
+    if (!c) return;
+
+    const nextRides = Math.min(c.rides + 1, TARGET_RIDES);
+    c.rides = nextRides;
+    renderCustomers();
+
+    showBar('Recording ride…');
+    try {
+      await request({ action: 'update_customer', customerId, rides: nextRides });
+      hideBar('Ride updated', 'ok');
+    } catch (e) {
+      hideBar('Update failed: ' + e.message, 'err');
+    }
+  }
+
+  async function markIncentivePaid(customerId) {
+    const c = customers.find(x => String(x.customerId) === String(customerId));
+    if (!c) return;
+
+    const amtBox = document.getElementById(`amt_${customerId}`);
+    const amount = amtBox ? (Number(amtBox.value) || DEFAULT_INCENTIVE) : DEFAULT_INCENTIVE;
+
+    c.incentiveGiven = true;
+    c.incentiveAmount = amount;
+    renderCustomers();
+
+    showBar('Updating incentive status…');
+    try {
+      await request({
+        action: 'update_customer',
+        customerId,
+        incentiveGiven: true,
+        incentiveAmount: amount
+      });
+      hideBar('Incentive marked paid', 'ok');
+    } catch (e) {
+      hideBar('Update failed: ' + e.message, 'err');
+    }
+  }
+
+  function renderCustomers() {
+    const active = customers.filter(c => !c.incentiveGiven);
+    const history = customers.filter(c => c.incentiveGiven);
+
+    document.getElementById('activeBadge').innerText = active.length;
+    document.getElementById('historyBadge').innerText = history.length;
+
+    const activeWrap = document.getElementById('activeList');
+    if (active.length === 0) {
+      activeWrap.innerHTML = `<div class="empty">No active customers for this driver.</div>`;
+    } else {
+      activeWrap.innerHTML = active.map(c => {
+        let pills = '';
+        for (let i = 1; i <= TARGET_RIDES; i++) {
+          pills += `<div class="pill ${i <= c.rides ? 'filled' : ''}"></div>`;
+        }
+        const isEligible = c.rides >= TARGET_RIDES;
+
+        return `
+          <div class="card">
+            <div class="card-top">
+              <span class="cust-title">${c.customerName}</span>
+              <span class="cust-id">#${c.customerId}</span>
             </div>
+            <div class="pills">${pills}</div>
+            <div class="meta-row">
+              <span>${c.rides}/${TARGET_RIDES} rides completed</span>
+              <span class="fee-tag ${isEligible ? 'ready' : ''}">
+                ${isEligible ? '✓ Target Achieved' : 'In Progress'}
+              </span>
+            </div>
+            ${isEligible ? `
+              <div class="incentive-box">
+                <span>Incentive Due</span>
+                <div>
+                  ₹<input type="number" id="amt_${c.customerId}" class="amt-input" value="${c.incentiveAmount}">
+                  <button class="btn-pay" onclick="markIncentivePaid('${c.customerId}')">Mark Paid</button>
+                </div>
+              </div>
+            ` : `
+              <button class="btn-step" onclick="bumpRide('${c.customerId}')">+1 Ride Completed</button>
+            `}
           </div>
-        ` : `
-          <button class="btn-ride" onclick="bumpRide('${c.id}')">+1 Ride Completed</button>
-        `}
-      `;
-      activeList.appendChild(card);
-    });
+        `;
+      }).join('');
+    }
+
+    const historyWrap = document.getElementById('historyList');
+    if (history.length === 0) {
+      historyWrap.innerHTML = `<div class="empty">No paid records for this driver.</div>`;
+    } else {
+      historyWrap.innerHTML = history.map(c => `
+        <div class="card" style="opacity: 0.85;">
+          <div class="card-top">
+            <span class="cust-title">${c.customerName}</span>
+            <span class="cust-id">#${c.customerId}</span>
+          </div>
+          <div class="meta-row">
+            <span>Completed ${c.rides}/${TARGET_RIDES} rides</span>
+            <span style="font-weight: 600; color: var(--success)">Paid: ₹${c.incentiveAmount}</span>
+          </div>
+        </div>
+      `).join('');
+    }
   }
 
-  // History list
-  const historyList = document.getElementById('historyList');
-  historyList.innerHTML = '';
-  if (history.length === 0) {
-    historyList.innerHTML = '<div class="empty-state">No completed records yet.</div>';
-  } else {
-    history.forEach(c => {
-      const card = document.createElement('div');
-      card.className = 'card history-card';
-      card.innerHTML = `
-        <div class="card-header">
-          <span class="cust-name">${escapeHtml(c.name)}</span>
-          <button class="btn-icon" title="Remove" onclick="removeCustomer('${c.id}')">×</button>
-        </div>
-        <div class="meta-row">
-          <span style="color:var(--text-muted);">Completed ${c.rides}/${INCENTIVE_TARGET} rides</span>
-          <span style="font-weight:600; color:var(--success);">Incentive Paid: ₹${c.incentiveAmount}</span>
-        </div>
-      `;
-      historyList.appendChild(card);
-    });
-  }
-}
+  document.getElementById('custNameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleAddCustomer();
+  });
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function renderAll() {
-  renderTabs();
-  renderCardLists();
-}
-
-// Initialize
-loadFromLocalStorage();
-renderAll();
+  init();
 </script>
 
 </body>
