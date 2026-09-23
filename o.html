@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<title>OTP Dashboard</title>
+<style>
+  :root {
+    --bg: #f5f6f4;
+    --panel: #ffffff;
+    --ink: #15191d;
+    --ink-2: #5d6670;
+    --ink-3: #98a0a8;
+    --line: #e4e7e9;
+    --accent: #2f5bff;
+    --accent-soft: #e9eeff;
+    --ok: #12905a;
+    --ok-soft: #e4f5ec;
+    --warn: #b26a00;
+    --warn-soft: #fdf1dc;
+    --danger: #c8322f;
+    --danger-soft: #fdeceb;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --r: 10px;
+    --tap: 42px;
+    --side: 320px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1114; --panel: #151a1f; --ink: #e9edf1; --ink-2: #9aa4ae; --ink-3: #5f6a75; --line: #232a31;
+      --accent: #6d8bff; --accent-soft: #1b2444; --ok: #3ccf8e; --ok-soft: #10281f;
+      --warn: #f0b04a; --warn-soft: #2e2410; --danger: #ff6b66; --danger-soft: #331a19;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; -webkit-text-size-adjust: 100%; }
+
+  .app { height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 20px; padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 650; font-size: 15px; letter-spacing: -0.01em; }
+  .brand i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+  .hamburger { display: none; width: var(--tap); height: var(--tap); padding: 0; align-items: center; justify-content: center; background: none; border: 1px solid var(--line); border-radius: var(--r); color: var(--ink); }
+  .hamburger svg { width: 18px; height: 18px; }
+  .balance { display: inline-flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); color: var(--ink-2); padding: 7px 12px; border-radius: 999px; font-size: 13px; min-height: 36px; }
+  .balance b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
+  .balance svg { width: 13px; height: 13px; }
+
+  .body { display: grid; grid-template-columns: var(--side) 1fr; min-height: 0; }
+  .order { padding: 20px; border-right: 1px solid var(--line); background: var(--panel); overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
+  .main { padding: 20px 24px; overflow-y: auto; min-width: 0; }
+
+  .field label, .step-title { display: block; font-size: 12px; color: var(--ink-2); font-weight: 600; margin-bottom: 7px; }
+  .step-title span { color: var(--ink-3); font-weight: 500; }
+  input[type="text"], input[type="password"] {
+    width: 100%; min-height: var(--tap); padding: 0 12px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--r); color: var(--ink); font-family: var(--mono); font-size: 14px;
+  }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .key-field { position: relative; }
+  .key-field input { padding-right: 56px; }
+  .key-toggle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--ink-2); font-size: 12px; padding: 8px; }
+  .row { display: flex; gap: 8px; }
+  .row input { flex: 1; min-width: 0; }
+
+  button { font-family: inherit; cursor: pointer; }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn { min-height: var(--tap); padding: 0 16px; border-radius: var(--r); border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-weight: 600; font-size: 13px; transition: background 0.12s; }
+  .btn:hover:not(:disabled) { background: var(--bg); }
+  .btn-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); width: 100%; font-size: 14px; }
+  .btn-primary:hover:not(:disabled) { background: var(--ink); opacity: 0.88; }
+  .btn-link { background: none; border: none; color: var(--ink-2); font-size: 12px; padding: 4px 0; text-decoration: underline; text-underline-offset: 3px; }
+
+  .list { display: flex; flex-direction: column; margin-top: 8px; max-height: 190px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r); }
+  .list:empty { display: none; }
+  .opt { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; border-bottom: 1px solid var(--line); padding: 10px 12px; color: var(--ink); font-size: 13px; min-height: 40px; }
+  .opt:last-child { border-bottom: none; }
+  .opt:hover { background: var(--bg); }
+  .opt.active { background: var(--accent-soft); }
+  .opt img { width: 18px; height: 18px; border-radius: 4px; flex: none; }
+  .opt .name { flex: 1; font-weight: 550; }
+  .opt .meta { color: var(--ink-3); font-family: var(--mono); font-size: 11px; }
+  .opt .price { font-family: var(--mono); font-weight: 600; color: var(--ok); }
+  .hint { font-size: 12px; color: var(--ink-3); padding: 8px 2px; }
+  .hint.err { color: var(--danger); }
+  .summary { font-size: 12px; color: var(--ink-2); margin: 10px 0; line-height: 1.5; }
+  .summary b { color: var(--ink); }
+
+  .main-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .main-head h2 { font-size: 15px; margin: 0; font-weight: 650; }
+  .main-head h2 span { color: var(--ink-3); font-weight: 500; margin-left: 4px; }
+  .head-actions { display: flex; gap: 14px; }
+
+  .banner { display: none; align-items: flex-start; justify-content: space-between; gap: 10px; background: var(--danger-soft); color: var(--danger); border-radius: var(--r); padding: 11px 14px; font-size: 13px; margin-bottom: 14px; }
+  .banner.show { display: flex; }
+  .banner button { background: none; border: none; color: inherit; padding: 0 2px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .card.done { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); }
+  .card.expired { opacity: 0.7; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .phone-row { display: flex; align-items: center; gap: 6px; }
+  .phone { font-family: var(--mono); font-size: 19px; font-weight: 650; letter-spacing: 0.01em; }
+  .phone .cc { color: var(--ink-3); font-weight: 500; }
+  .svc { font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+  .icon-btn { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: none; border: 1px solid transparent; border-radius: 8px; color: var(--ink-3); flex: none; }
+  .icon-btn:hover { background: var(--bg); color: var(--ink); }
+  .icon-btn svg { width: 15px; height: 15px; pointer-events: none; }
+  .icon-btn.copied { color: var(--ok); }
+  .state { text-align: right; flex: none; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 650; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.off { background: var(--bg); color: var(--ink-3); }
+  .pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill.live i { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+  .left { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 6px; }
+
+  .codes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .code { border: 1px dashed var(--line); border-radius: var(--r); padding: 12px 10px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 92px; justify-content: center; }
+  .code .k { font-size: 11px; color: var(--ink-3); font-weight: 600; }
+  .code .v { font-family: var(--mono); font-size: 26px; font-weight: 700; letter-spacing: 0.08em; color: var(--ink-3); }
+  .code.got { border: 1px solid color-mix(in srgb, var(--ok) 45%, var(--line)); background: var(--ok-soft); }
+  .code.got .v { color: var(--ink); animation: pop 0.35s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(0.88); } }
+  .code.got button { font-size: 12px; font-weight: 600; color: var(--ok); background: none; border: none; padding: 2px 6px; }
+  .code.next { border-style: solid; }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .actions .btn { flex: 1; min-width: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; padding: 6px 12px; }
+  .actions .btn small { font-size: 11px; font-weight: 500; opacity: 0.85; }
+  .btn-cancel { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
+  .btn-cancel.refund small { color: var(--ok); }
+  .btn-cancel.norefund small { color: var(--warn); }
+  .btn-again { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, var(--line)); }
+
+  details summary { list-style: none; cursor: pointer; font-size: 12px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 4px; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary { color: var(--ink-2); }
+  .log { margin-top: 8px; background: var(--bg); border-radius: 8px; padding: 9px 11px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); word-break: break-all; white-space: pre-wrap; max-height: 90px; overflow-y: auto; }
+
+  .empty { grid-column: 1 / -1; text-align: center; padding: 64px 20px; color: var(--ink-3); border: 1px dashed var(--line); border-radius: var(--r); }
+  .empty strong { display: block; color: var(--ink-2); font-size: 14px; margin-bottom: 4px; }
+
+  .toasts { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; align-items: center; pointer-events: none; }
+  .toast { background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: 13px; animation: tin 0.18s ease; }
+  .toast.err { background: var(--danger); color: #fff; }
+  @keyframes tin { from { opacity: 0; transform: translateY(6px); } }
+
+  .backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 39; }
+  .backdrop.show { display: block; }
+  .drawer-head { display: none; }
+
+  @media (max-width: 860px) {
+    .body { grid-template-columns: 1fr; }
+    .hamburger { display: inline-flex; }
+    .top { padding-left: 14px; padding-right: 14px; }
+    .order {
+      position: fixed; top: 0; left: 0; bottom: 0; width: min(88vw, 340px); z-index: 40;
+      transform: translateX(-100%); transition: transform 0.2s ease; box-shadow: 4px 0 28px rgba(0,0,0,0.25);
+      padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    }
+    .order.open { transform: none; }
+    .drawer-head { display: flex; align-items: center; justify-content: space-between; font-weight: 650; }
+    .drawer-head button { background: none; border: none; color: var(--ink-2); font-size: 20px; width: var(--tap); height: var(--tap); }
+    .main { padding: 14px; }
+    .cards { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <button type="button" class="hamburger" onclick="openDrawer()" aria-label="Open order panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <i></i><span>OTP</span>
+    </div>
+    <button type="button" class="balance" onclick="checkBalance()" title="Refresh balance">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      Balance <b id="balanceText">—</b>
+    </button>
+  </header>
+
+  <div class="body">
+    <div class="backdrop" id="backdrop" onclick="closeDrawer()"></div>
+
+    <aside class="order" id="order">
+      <div class="drawer-head"><span>New number</span><button type="button" onclick="closeDrawer()" aria-label="Close">×</button></div>
+
+      <div class="field">
+        <label for="apiKey">API key</label>
+        <div class="key-field">
+          <input type="password" id="apiKey" placeholder="Paste your key" autocomplete="off" oninput="handleKeyChange()" onkeydown="if(event.key==='Enter'){event.preventDefault();checkBalance();}">
+          <button type="button" class="key-toggle" id="visToggle" onclick="toggleKeyVisibility()">Show</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="serviceSearch">Service</label>
+        <div class="row">
+          <input type="text" id="serviceSearch" placeholder="Search e.g. whatsapp" onkeydown="if(event.key==='Enter'){event.preventDefault();searchServices();}">
+          <button type="button" class="btn" onclick="searchServices()">Search</button>
+        </div>
+        <div id="serviceResults" class="list"></div>
+      </div>
+
+      <div class="field" id="serverBlock" style="display:none;">
+        <div class="step-title">Operator</div>
+        <div id="serverList" class="list"></div>
+        <div id="selectionSummary" class="summary"></div>
+        <button id="buyBtn" class="btn btn-primary" onclick="buyNumber()" disabled><span id="buyBtnLabel">Buy number</span></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="banner" class="banner" role="alert"></div>
+      <div class="main-head">
+        <h2>Numbers<span id="sessionCount">0</span></h2>
+        <div class="head-actions">
+          <button type="button" class="btn-link" onclick="exportHistoryJson()">Export</button>
+          <button type="button" class="btn-link" onclick="clearCurrentHistory()">Clear</button>
+        </div>
+      </div>
+      <div id="cardsContainer" class="cards"></div>
+    </main>
+  </div>
+</div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw9_JcxZWiQ3co-29bMCivGFEtDjlLSQg1d9REGMZ9wCrBjAbW-BgS6Y9zJfi1xZpIH/exec";
+  const CANCEL_LOCKOUT_SECONDS = 120;   // provider blocks cancel for this long after purchase
+  const POLL_WINDOW_SECONDS = 20 * 60;  // keep polling for 20 minutes from purchase
+  const POLL_INTERVAL_MS = 5000;
+  const MAX_OTPS = 2;
+
+  let keyDebounceTimer = null;
+  let activePollers = {};
+  let currentKeyHistory = [];
+  let selectedService = null;
+  let selectedServer = null;
+  let justArrived = new Set();
+
+  /* ---------- Country code handling ---------- */
+  // Longest-prefix match on numbers that come back without a separator (e.g. 919337215246).
+  const CC2 = new Set("20 27 30 31 32 33 34 36 39 40 41 43 44 45 46 47 48 49 51 52 53 54 55 56 57 58 60 61 62 63 64 65 66 81 82 84 86 90 91 92 93 94 95 98".split(" "));
+  const CC3 = new Set("212 213 216 218 220 221 233 234 249 251 254 255 256 260 263 351 352 353 354 355 358 359 370 371 372 380 381 385 420 421 852 853 855 856 880 960 961 962 963 964 965 966 971 972 973 974 975 976 977 992 993 994 995 996 998".split(" "));
+  function splitPhone(phone) {
+    const raw = String(phone || "").trim();
+    if (!raw) return { cc: "", local: "" };
+    if (raw.includes("-")) { const i = raw.indexOf("-"); return { cc: raw.slice(0, i).replace(/\D/g, ""), local: raw.slice(i + 1) }; }
+    const d = raw.replace(/\D/g, "");
+    if (d.startsWith("91") && d.length >= 12) return { cc: "91", local: d.slice(2) };
+    if (CC3.has(d.slice(0, 3))) return { cc: d.slice(0, 3), local: d.slice(3) };
+    if (CC2.has(d.slice(0, 2))) return { cc: d.slice(0, 2), local: d.slice(2) };
+    if (d[0] === "1" || d[0] === "7") return { cc: d[0], local: d.slice(1) };
+    return { cc: "", local: d };
+  }
+
+  /* ---------- Utilities ---------- */
+  function esc(s) { return s == null ? "" : String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+  const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+  function showToast(msg, ok) {
+    const el = document.createElement("div");
+    el.className = "toast" + (ok ? "" : " err");
+    el.textContent = msg;
+    document.getElementById("toasts").appendChild(el);
+    setTimeout(() => el.remove(), 2200);
+  }
+  async function copyText(text, label, btn) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(`${label} copied`, true);
+      if (btn && btn.classList.contains("icon-btn")) {
+        const old = btn.innerHTML; btn.classList.add("copied"); btn.innerHTML = ICON_OK;
+        setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = old; }, 1100);
+      }
+    } catch (e) { showToast(`Couldn't copy ${label.toLowerCase()}`, false); }
+  }
+  // One delegated handler for all copy buttons
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-copy]");
+    if (b) copyText(b.dataset.copy, b.dataset.label || "Text", b);
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); });
+
+  function showBanner(html) { const b = document.getElementById("banner"); b.innerHTML = `<span>${html}</span><button type="button" onclick="hideBanner()" aria-label="Dismiss">✕</button>`; b.classList.add("show"); }
+  function hideBanner() { document.getElementById("banner").classList.remove("show"); }
+  const isMobile = () => window.matchMedia("(max-width: 860px)").matches;
+  function openDrawer() { document.getElementById("order").classList.add("open"); document.getElementById("backdrop").classList.add("show"); }
+  function closeDrawer() { document.getElementById("order").classList.remove("open"); document.getElementById("backdrop").classList.remove("show"); }
+  function focusApiKey() { if (isMobile()) openDrawer(); document.getElementById("apiKey").focus(); }
+  function toggleKeyVisibility() {
+    const i = document.getElementById("apiKey"), b = document.getElementById("visToggle");
+    if (i.type === "password") { i.type = "text"; b.textContent = "Hide"; } else { i.type = "password"; b.textContent = "Show"; }
+  }
+
+  /* ---------- Time helpers ---------- */
+  const elapsed = (item) => Math.floor((Date.now() - new Date(item.createdAt).getTime()) / 1000);
+  const cancelRemaining = (item) => item.createdAt ? Math.max(0, CANCEL_LOCKOUT_SECONDS - elapsed(item)) : 0;
+  const pollRemaining = (item) => item.createdAt ? Math.max(0, POLL_WINDOW_SECONDS - elapsed(item)) : 0;
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  /* ---------- Storage ---------- */
+  const storageKey = (k) => `otp_history_v3_${encodeURIComponent(k)}`;
+  const legacyKey = (k) => `otp_history_v2_${encodeURIComponent(k)}`;
+
+  function normalizeItem(it) {
+    if (!Array.isArray(it.otps)) it.otps = it.otp ? [it.otp] : [];
+    delete it.otp;
+    if (it.status === "SUCCESS") it.status = "POLLING";
+    if (it.status === "POLLING") {
+      if (it.otps.length >= MAX_OTPS) it.status = "DONE";
+      else if (pollRemaining(it) <= 0) it.status = "EXPIRED";
+    }
+    return it;
+  }
+
+  function loadHistoryForKey(key) {
+    Object.values(activePollers).forEach(clearInterval);
+    activePollers = {};
+    if (!key) { currentKeyHistory = []; renderCards(); return; }
+    let data = null;
+    try { data = localStorage.getItem(storageKey(key)) || localStorage.getItem(legacyKey(key)); } catch (e) {}
+    try { currentKeyHistory = data ? JSON.parse(data).map(normalizeItem) : []; } catch (e) { currentKeyHistory = []; }
+    saveCurrentHistory();
+    renderCards();
+    currentKeyHistory.forEach(it => { if (it.status === "POLLING") startCardPolling(it.id, key); });
+  }
+  function saveCurrentHistory() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) return;
+    try { localStorage.setItem(storageKey(key), JSON.stringify(currentKeyHistory)); } catch (e) {}
+  }
+  function handleKeyChange() {
+    clearTimeout(keyDebounceTimer);
+    const key = document.getElementById("apiKey").value.trim();
+    updateBuyBtnState();
+    if (!key) { loadHistoryForKey(""); document.getElementById("balanceText").textContent = "—"; return; }
+    loadHistoryForKey(key);
+    keyDebounceTimer = setTimeout(checkBalance, 600);
+  }
+  function exportHistoryJson() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) { showBanner("<strong>API key required.</strong> Enter your key first."); focusApiKey(); return; }
+    if (!currentKeyHistory.length) { showToast("No history to export", false); return; }
+    const blob = new Blob([JSON.stringify(currentKeyHistory, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${key.slice(0, 12)}_history.json`; a.click();
+    URL.revokeObjectURL(url);
+    showToast("History exported", true);
+  }
+  function clearCurrentHistory() {
+    const key = document.getElementById("apiKey").value.trim();
+    if (!key) { showToast("Enter an API key first", false); return; }
+    if (confirm("Clear local history for this API key? This can't be undone.")) {
+      Object.values(activePollers).forEach(clearInterval); activePollers = {};
+      currentKeyHistory = []; saveCurrentHistory(); renderCards(); showToast("History cleared", true);
+    }
+  }
+
+  /* ---------- Balance ---------- */
+  async function checkBalance() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const out = document.getElementById("balanceText");
+    hideBanner();
+    if (!apiKey) { showBanner("<strong>API key required.</strong> Enter your key to check balance."); focusApiKey(); return; }
+    out.textContent = "…";
+    try {
+      const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=getBalance&api_key=${encodeURIComponent(apiKey)}`);
+      const text = await res.text();
+      out.textContent = text.includes("ACCESS_BALANCE") ? (text.split(":")[1]?.trim() || text) : "Error";
+    } catch (e) { out.textContent = "Error"; }
+  }
+
+  /* ---------- Service / operator ---------- */
+  async function searchServices() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const q = document.getElementById("serviceSearch").value.trim();
+    const el = document.getElementById("serviceResults");
+    hideBanner();
+    if (!apiKey) { showBanner("<strong>API key required.</strong> Enter your key before searching."); focusApiKey(); return; }
+    el.innerHTML = '<div class="hint">Searching…</div>';
+    try {
+      const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=getServices&search=${encodeURIComponent(q)}&page=1&pageSize=60`);
+      const data = await res.json();
+      renderServiceResults(data.items || []);
+    } catch (e) { el.innerHTML = '<div class="hint err">Search failed. Try again.</div>'; }
+  }
+  function renderServiceResults(items) {
+    window.__services = items;
+    const el = document.getElementById("serviceResults");
+    if (!items.length) { el.innerHTML = '<div class="hint">No services found.</div>'; return; }
+    el.innerHTML = items.map(i => `
+      <button type="button" class="opt" data-code="${esc(i.code)}" onclick="selectService('${esc(i.code)}')">
+        <img src="${esc(i.icon)}" alt="" onerror="this.style.visibility='hidden'">
+        <span class="name">${esc(i.name)}</span><span class="meta">${esc(i.code)}</span>
+      </button>`).join("");
+  }
+  function selectService(code) {
+    const item = (window.__services || []).find(x => x.code === code);
+    if (!item) return;
+    selectedService = item; selectedServer = null;
+    document.querySelectorAll("#serviceResults .opt").forEach(el => el.classList.toggle("active", el.dataset.code === code));
+    document.getElementById("serverBlock").style.display = "block";
+    renderServerList(item.servers || []);
+    updateSummary(); updateBuyBtnState();
+  }
+  function renderServerList(servers) {
+    window.__servers = servers;
+    const el = document.getElementById("serverList");
+    if (!servers.length) { el.classList.remove("list"); el.innerHTML = '<div class="hint">No operators available right now.</div>'; return; }
+    el.classList.add("list");
+    el.innerHTML = servers.map(s => `
+      <button type="button" class="opt" data-server="${esc(s.serverCode)}" onclick="selectServer('${esc(s.serverCode)}')">
+        <span class="name">${esc(s.serverName)}</span><span class="price">₹${esc(s.price)}</span>
+      </button>`).join("");
+  }
+  function selectServer(code) {
+    const s = (window.__servers || []).find(x => x.serverCode === code);
+    if (!s) return;
+    selectedServer = s;
+    document.querySelectorAll("#serverList .opt").forEach(el => el.classList.toggle("active", el.dataset.server === code));
+    updateSummary(); updateBuyBtnState();
+  }
+  function updateSummary() {
+    const el = document.getElementById("selectionSummary");
+    if (!selectedService) { el.innerHTML = ""; return; }
+    el.innerHTML = `<b>${esc(selectedService.name)}</b>` + (selectedServer ? ` via ${esc(selectedServer.serverName)} · <b>₹${esc(selectedServer.price)}</b>` : " — pick an operator");
+  }
+  function updateBuyBtnState() {
+    const btn = document.getElementById("buyBtn");
+    btn.disabled = !(document.getElementById("apiKey").value.trim() && selectedService && selectedServer);
+  }
+
+  /* ---------- OTP parsing ---------- */
+  function extractOtpCode(raw) {
+    if (!raw) return null;
+    const clean = raw.replace(/^STATUS_OK:?/, "").trim();
+    if (/^\d+$/.test(clean)) return clean;
+    const m = /(?<![A-Za-z0-9])(\d{4,8})(?![A-Za-z0-9])/.exec(raw);
+    return m ? m[1] : null;
+  }
+
+  /* ---------- Buy ---------- */
+  async function buyNumber() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const btn = document.getElementById("buyBtn"), label = document.getElementById("buyBtnLabel");
+    hideBanner();
+    if (!apiKey) { showBanner("<strong>API key required.</strong> Enter your key first."); focusApiKey(); return; }
+    if (!selectedService || !selectedServer) { showBanner("Select a service and an operator first."); return; }
+    btn.disabled = true; label.textContent = "Requesting…";
+    try {
+      const url = `${GOOGLE_SCRIPT_URL}?action=getNumber&api_key=${encodeURIComponent(apiKey)}&service=${encodeURIComponent(selectedService.code)}&server=${encodeURIComponent(selectedServer.serverCode)}`;
+      const res = await fetch(url);
+      const text = await res.text();
+      if (!text.includes("ACCESS_NUMBER")) throw new Error(text || "Provider error on getNumber");
+      const parts = text.split(":");
+      const item = {
+        id: parts[1]?.trim(), phone: parts[2]?.trim(),
+        service: selectedService.code, serviceName: selectedService.name,
+        server: selectedServer.serverCode, serverName: selectedServer.serverName, price: selectedServer.price,
+        status: "POLLING", otps: [], lastRawResponse: text, createdAt: new Date().toISOString()
+      };
+      currentKeyHistory.unshift(item);
+      saveCurrentHistory(); renderCards();
+      startCardPolling(item.id, apiKey);
+      checkBalance(); showToast("Number ready", true); closeDrawer();
+    } catch (err) {
+      showBanner(`<strong>Failed to get number:</strong> ${esc(err.message)}`);
+    } finally { updateBuyBtnState(); label.textContent = "Buy number"; }
+  }
+
+  /* ---------- Polling (20 min window, up to 2 codes) ---------- */
+  function stopPoller(id) { if (activePollers[id]) { clearInterval(activePollers[id]); delete activePollers[id]; } }
+  function removeItem(id) { stopPoller(id); currentKeyHistory = currentKeyHistory.filter(x => x.id !== id); saveCurrentHistory(); renderCards(); }
+
+  function startCardPolling(id, apiKey) {
+    stopPoller(id);
+    const poll = async () => {
+      const item = currentKeyHistory.find(x => x.id === id);
+      if (!item) { stopPoller(id); return; }
+      if (pollRemaining(item) <= 0) {
+        stopPoller(id); item.status = "EXPIRED"; saveCurrentHistory(); updateCardUI(item); return;
+      }
+      try {
+        const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=getStatus&api_key=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}`);
+        const text = await res.text();
+
+        if (text.includes("ACCESS_CANCEL") || text.includes("STATUS_CANCEL")) { removeItem(id); checkBalance(); return; }
+
+        const live = currentKeyHistory.find(x => x.id === id);
+        if (!live) { stopPoller(id); return; }
+        live.lastRawResponse = `[${new Date().toLocaleTimeString()}] ${text}`;
+
+        if (text.startsWith("STATUS_OK")) {
+          const code = extractOtpCode(text);
+          if (code && !live.otps.includes(code) && live.otps.length < MAX_OTPS) {
+            live.otps.push(code);
+            justArrived.add(`${id}:${live.otps.length - 1}`);
+            showToast(`Code ${live.otps.length} received`, true);
+          }
+          if (live.otps.length >= MAX_OTPS) { live.status = "DONE"; stopPoller(id); }
+        }
+        saveCurrentHistory(); updateCardUI(live);
+      } catch (e) { console.error(e); }
+    };
+    poll();
+    activePollers[id] = setInterval(poll, POLL_INTERVAL_MS);
+  }
+
+  /* ---------- Actions ---------- */
+  async function performAction(id, statusVal) {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const item = currentKeyHistory.find(x => x.id === id);
+    if (!apiKey || !item) return;
+
+    if (statusVal === 8) {
+      const rem = cancelRemaining(item);
+      if (rem > 0) { showBanner(`Cancel unlocks in ${fmt(rem)}.`); return; }
+      const refund = item.otps.length === 0;
+      if (!confirm(`Cancel ${splitPhone(item.phone).local}? ${refund ? "You'll get a full refund." : "No refund, since a code was already received."}`)) return;
+    }
+
+    item.lastRawResponse = `[${new Date().toLocaleTimeString()}] ${statusVal === 8 ? "Cancelling…" : "Requesting next code…"}`;
+    updateCardUI(item);
+    try {
+      const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=setStatus&api_key=${encodeURIComponent(apiKey)}&id=${encodeURIComponent(id)}&status=${statusVal}`);
+      const text = await res.text();
+      if (text.includes("ACCESS_CANCEL")) { removeItem(id); checkBalance(); showToast("Number cancelled", true); return; }
+      item.lastRawResponse = `[${new Date().toLocaleTimeString()}] Action(${statusVal}): ${text}`;
+      if (statusVal === 3) {
+        showToast("Waiting for the next code", true);
+        if (item.status === "POLLING" && !activePollers[id]) startCardPolling(id, apiKey);
+      }
+      saveCurrentHistory(); updateCardUI(item);
+    } catch (err) {
+      item.lastRawResponse = `[${new Date().toLocaleTimeString()}] Error: ${err.message}`;
+      showBanner(`Action failed: ${esc(err.message)}`); updateCardUI(item);
+    }
+  }
+
+  /* ---------- Rendering ---------- */
+  function cancelLabelHtml(item) {
+    const rem = cancelRemaining(item);
+    const refund = item.otps.length === 0;
+    if (rem > 0) return `Cancel in ${fmt(rem)}<small>${refund ? "Full refund" : "No refund"}</small>`;
+    return `Cancel<small>${refund ? "Full refund" : "No refund"}</small>`;
+  }
+
+  function renderCards() {
+    const c = document.getElementById("cardsContainer");
+    document.getElementById("sessionCount").textContent = currentKeyHistory.length;
+    if (!currentKeyHistory.length) {
+      const hasKey = !!document.getElementById("apiKey").value.trim();
+      c.innerHTML = `<div class="empty"><strong>No numbers yet</strong>${hasKey ? "Search a service, pick an operator and buy a number." : "Enter your API key to get started."}${hasKey ? "" : '<br><br><button type="button" class="btn" onclick="focusApiKey()">Enter API key</button>'}</div>`;
+      return;
+    }
+    c.innerHTML = currentKeyHistory.map(cardHtml).join("");
+  }
+  function updateCardUI(item) {
+    const el = document.getElementById(`card-${item.id}`);
+    if (!el) { renderCards(); return; }
+    const open = el.querySelector("details")?.open;
+    const tmp = document.createElement("div");
+    tmp.innerHTML = cardHtml(item);
+    const n = tmp.firstElementChild;
+    if (open) n.querySelector("details").open = true;
+    el.replaceWith(n);
+  }
+
+  function cardHtml(item) {
+    const { cc, local } = splitPhone(item.phone);
+    const n = item.otps.length;
+    const expired = item.status === "EXPIRED", done = item.status === "DONE";
+    const polling = item.status === "POLLING";
+
+    let pill;
+    if (expired) pill = `<span class="pill off"><i></i>Expired</span>`;
+    else if (done) pill = `<span class="pill ok"><i></i>2 of 2 received</span>`;
+    else if (n === 1) pill = `<span class="pill ok live"><i></i>1 of 2 received</span>`;
+    else pill = `<span class="pill live"><i></i>Waiting</span>`;
+
+    const timeLeft = polling ? `<div class="left" id="left-${esc(item.id)}">${fmt(pollRemaining(item))} left</div>` : `<div class="left"></div>`;
+
+    const slots = [0, 1].map(i => {
+      const code = item.otps[i];
+      if (code) {
+        const fresh = justArrived.has(`${item.id}:${i}`); justArrived.delete(`${item.id}:${i}`);
+        return `<div class="code got"><span class="k">Code ${i + 1}</span><span class="v">${esc(code)}</span>
+          <button type="button" data-copy="${esc(code)}" data-label="Code ${i + 1}">Copy</button></div>`;
+      }
+      const label = expired || done ? "—" : (i === 0 ? "Waiting…" : (n >= 1 ? "Waiting…" : "—"));
+      return `<div class="code${i === 1 && n === 1 && polling ? " next" : ""}"><span class="k">Code ${i + 1}</span><span class="v">${label}</span></div>`;
+    }).join("");
+
+    const sid = esc(item.id);
+    let actions = "";
+    if (expired) {
+      actions = `<button type="button" class="btn" onclick="removeItem('${sid}')">Remove</button>`;
+    } else {
+      const locked = cancelRemaining(item) > 0;
+      actions = `<button type="button" id="cancel-btn-${sid}" class="btn btn-cancel ${n === 0 ? "refund" : "norefund"}" onclick="performAction('${sid}', 8)" ${locked ? "disabled" : ""}>${cancelLabelHtml(item)}</button>`;
+      if (n === 1 && polling) actions += `<button type="button" class="btn btn-again" onclick="performAction('${sid}', 3)">Get second code</button>`;
+    }
+
+    const created = item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+    const svc = item.serviceName ? `${esc(item.serviceName)} · ${esc(item.serverName || item.server || "")}${item.price ? " · ₹" + esc(item.price) : ""}${created ? " · " + esc(created) : ""}` : "";
+
+    return `
+    <div class="card${done ? " done" : ""}${expired ? " expired" : ""}" id="card-${sid}">
+      <div class="card-head">
+        <div>
+          <div class="phone-row">
+            <span class="phone">${cc ? `<span class="cc">${esc(cc)}-</span>` : ""}${esc(local || "—")}</span>
+            <button type="button" class="icon-btn" title="Copy number without country code" aria-label="Copy number without country code" data-copy="${esc(local)}" data-label="Number">${ICON_COPY}</button>
+          </div>
+          <div class="svc">${svc}</div>
+        </div>
+        <div class="state">${pill}${timeLeft}</div>
+      </div>
+      <div class="codes">${slots}</div>
+      <div class="actions">${actions}</div>
+      <details>
+        <summary>Response log</summary>
+        <div class="log">${esc(item.lastRawResponse || "No response yet.")}</div>
+      </details>
+    </div>`;
+  }
+
+  /* ---------- 1s ticker: cancel countdown + time left ---------- */
+  setInterval(() => {
+    currentKeyHistory.forEach(item => {
+      if (item.status === "EXPIRED") return;
+      const btn = document.getElementById(`cancel-btn-${item.id}`);
+      if (btn) {
+        btn.innerHTML = cancelLabelHtml(item);
+        btn.disabled = cancelRemaining(item) > 0;
+      }
+      const left = document.getElementById(`left-${item.id}`);
+      if (left) left.textContent = `${fmt(pollRemaining(item))} left`;
+    });
+  }, 1000);
+
+  renderCards();
+</script>
+</body>
+</html>
