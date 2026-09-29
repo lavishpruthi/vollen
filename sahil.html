@@ -2,46 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Opening Wedding Invitation Planner...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wedding Invitation Planner</title>
   
-  <!-- Instant Meta Refresh Fallback (0 seconds) -->
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbz6qFCw-J_5Nmf8dpP8_ae9Txfc9OHl_SfE-zehhhrfFTRwVHJBqP6iIy-28jPsfLt_AQ/exec">
+  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbzKBwwd2iXxCsqJN8P_FZK0YvCzy6Y8aebCPuxJHS6YHU3MK8PGeU3l3Vbyt7FlBhqXVg/exec">
 
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     body {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background-color: #faf5f5;
+      background-color: #fffaf0;
       color: #2d3748;
       text-align: center;
-      padding: 1.5rem;
+      padding: 1.25rem;
     }
     .card {
       background: #ffffff;
-      padding: 2.5rem 2rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-      max-width: 420px;
+      padding: 2.25rem 1.75rem;
+      border-radius: 18px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      max-width: 380px;
       width: 100%;
     }
     .spinner {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       border: 4px solid #fed7d7;
       border-top-color: #9b2c2c;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin: 0 auto 1.5rem;
+      margin: 0 auto 1.25rem;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
@@ -56,43 +54,39 @@
       font-size: 0.9rem;
       color: #718096;
       margin-bottom: 1.5rem;
+      line-height: 1.4;
     }
-    a.btn {
-      display: inline-block;
+    .btn {
+      display: block;
+      width: 100%;
       text-decoration: none;
       background-color: #9b2c2c;
       color: #ffffff;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
+      padding: 0.85rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
       font-weight: 600;
-      transition: background 0.2s ease;
-    }
-    a.btn:hover {
-      background-color: #7b1d1d;
+      box-shadow: 0 4px 12px rgba(155, 44, 44, 0.25);
     }
   </style>
 
   <script>
-    // Paste your Google Apps Script Web App URL below:
-    const TARGET_URL = "https://script.google.com/macros/s/AKfycbz6qFCw-J_5Nmf8dpP8_ae9Txfc9OHl_SfE-zehhhrfFTRwVHJBqP6iIy-28jPsfLt_AQ/exec";
+    const TARGET_URL = "https://script.google.com/macros/s/AKfycbzKBwwd2iXxCsqJN8P_FZK0YvCzy6Y8aebCPuxJHS6YHU3MK8PGeU3l3Vbyt7FlBhqXVg/exec";
 
-    // Immediate JavaScript redirection
-    if (TARGET_URL && TARGET_URL !== "https://script.google.com/macros/s/AKfycbz6qFCw-J_5Nmf8dpP8_ae9Txfc9OHl_SfE-zehhhrfFTRwVHJBqP6iIy-28jPsfLt_AQ/exec") {
-      window.location.replace(TARGET_URL);
+    function launch() {
+      window.location.href = TARGET_URL;
     }
+
+    launch();
+    window.addEventListener("DOMContentLoaded", launch);
   </script>
 </head>
 <body>
   <div class="card">
     <div class="spinner"></div>
-    <h2>Wedding Invitation Planner</h2>
-    <p>Redirecting to your invitation manager...</p>
-    <a id="manualLink" class="btn" href="https://script.google.com/macros/s/AKfycbz6qFCw-J_5Nmf8dpP8_ae9Txfc9OHl_SfE-zehhhrfFTRwVHJBqP6iIy-28jPsfLt_AQ/exec">Click here if not redirected</a>
+    <h2>Wedding Planner</h2>
+    <p>Opening invitation tracker. If it doesn't open automatically, tap below:</p>
+    <a id="actionBtn" class="btn" href="https://script.google.com/macros/s/AKfycbzKBwwd2iXxCsqJN8P_FZK0YvCzy6Y8aebCPuxJHS6YHU3MK8PGeU3l3Vbyt7FlBhqXVg/exec">Open Invitation Tracker</a>
   </div>
-
-  <script>
-    document.getElementById("manualLink").href = TARGET_URL;
-  </script>
 </body>
 </html>
